@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAcP3Ud60BC-RKD7bYVBx8bcro--L4mkLQ",
@@ -14,7 +15,9 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const shipmentsRef = ref(db, 'shipments');
+const auth = getAuth(app);
+let shipmentsRef = null;
+let currentUser = null;
 
 let shipments = [];
 let currentExchangeRate = 7.00;
@@ -39,17 +42,69 @@ document.addEventListener('DOMContentLoaded', () => {
   currentExchangeRate = parseFloat(localStorage.getItem('exchangeRate')) || 7.00;
   globalExchangeRateInput.value = currentExchangeRate;
 
-  // Real-time Sync from Firebase
-  onValue(shipmentsRef, (snapshot) => {
-    const data = snapshot.val();
-    shipments = [];
-    if (data) {
-      for (let key in data) {
-        shipments.push({ id: key, ...data[key] });
+  // Manage Auth State
+  let isLoginMode = true;
+  const toggleBtn = document.getElementById('toggleAuthMode');
+  const authForm = document.getElementById('authForm');
+  const authWrapper = document.getElementById('authWrapper');
+  const appCont = document.getElementById('appContainer');
+
+  toggleBtn.addEventListener('click', (e) => {
+    isLoginMode = !isLoginMode;
+    e.target.innerText = isLoginMode ? 'ليس لديك حساب؟ إنشاء حساب جديد كتاجر' : 'لديك حساب كتاجر؟ تسجيل دخول';
+    document.getElementById('authSubtitle').innerText = isLoginMode ? 'تسجيل الدخول للنظام' : 'إنشاء حساب جديد كتاجر';
+    document.getElementById('authActionBtn').innerHTML = isLoginMode ? '<i class="fa-solid fa-right-to-bracket"></i> <span>تسجيل الدخول</span>' : '<i class="fa-solid fa-user-plus"></i> <span>إنشاء الحساب</span>';
+    document.getElementById('authErrorMsg').innerText = '';
+  });
+
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const em = document.getElementById('authEmail').value;
+    const pw = document.getElementById('authPassword').value;
+    document.getElementById('authErrorMsg').innerText = '';
+    
+    try {
+      if (isLoginMode) {
+        await signInWithEmailAndPassword(auth, em, pw);
+      } else {
+        await createUserWithEmailAndPassword(auth, em, pw);
       }
+    } catch(err) {
+      document.getElementById('authErrorMsg').innerText = 'حدث خطأ: تأكد من بياناتك أو أن الإيميل غير مستخدم مسبقاً.';
+      console.error(err);
     }
-    // Render shipments
-    renderShipments();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    signOut(auth);
+  });
+
+  // Real-time Sync and Auth Observer
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      authWrapper.style.display = 'none';
+      appCont.style.display = 'block';
+      
+      // Fetch only THIS user's shipments
+      shipmentsRef = ref(db, 'users/' + user.uid + '/shipments');
+      onValue(shipmentsRef, (snapshot) => {
+        const data = snapshot.val();
+        shipments = [];
+        if (data) {
+          for (let key in data) {
+            shipments.push({ id: key, ...data[key] });
+          }
+        }
+        renderShipments();
+      });
+    } else {
+      currentUser = null;
+      authWrapper.style.display = 'flex';
+      appCont.style.display = 'none';
+      shipments = [];
+      renderShipments();
+    }
   });
 
   // Calculate LYD automatically when USD typed
@@ -130,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
           newShipment.timestamp = oldShip.timestamp;
         }
       }
-      update(ref(db, 'shipments/' + editingShipmentId), newShipment);
+      update(ref(db, 'users/' + currentUser.uid + '/shipments/' + editingShipmentId), newShipment);
       document.getElementById('cancelEditBtn').click(); // to reset UI
     } else {
       push(shipmentsRef, newShipment);
@@ -219,8 +274,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Global delete function
   window.deleteShipment = async function(id) {
     try {
-      if(confirm('هل أنت متأكد من حذف هذه الشحنة نهائياً من جميع الأجهزة؟')) {
-        const itemRef = ref(db, 'shipments/' + id);
+      if(confirm('هل أنت متأكد من حذف هذه الشحنة نهائياً من حسابك؟')) {
+        const itemRef = ref(db, 'users/' + currentUser.uid + '/shipments/' + id);
         await remove(itemRef); // Removes from Firebase Cloud ☁️
       }
     } catch(err) {
