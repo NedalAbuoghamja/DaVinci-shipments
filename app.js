@@ -81,6 +81,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const shaheenCode = document.getElementById('shaheenCode').value;
     const tripNumber = document.getElementById('tripNumber').value;
 
+    const quantity = parseInt(quantityInput.value) || 1;
+    const cbmQuantity = parseFloat(cbmQuantityInput.value) || 0;
+    const cbmPrice = parseFloat(cbmPriceInput.value) || 0;
+
     const imageInput = document.getElementById('itemImage');
 
     let imageBase64 = null;
@@ -239,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       let statusColor = 'var(--status-transit)';
       if (shipment.status.includes('تم الطلب')) statusColor = 'var(--status-pending)';
-      if (shipment.status.includes('الجمارك')) statusColor = 'var(--status-customs)';
+      if (shipment.status.includes('الجمارك') || shipment.status.includes('رايحة')) statusColor = 'var(--status-customs)'; // red color
       if (shipment.status.includes('جاهزة') || shipment.status.includes('الاستلام')) statusColor = 'var(--status-ready)';
 
       const card = document.createElement('div');
