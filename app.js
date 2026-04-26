@@ -285,10 +285,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const row = [
           `"${(s.itemName || '').replace(/"/g, '""')}"`,
-          `"${(s.chinaCode || '').replace(/"/g, '""')}"`,
-          `"${(s.trackingCode || '').replace(/"/g, '""')}"`,
-          `"${(s.shaheenCode || '').replace(/"/g, '""')}"`,
-          `"${(s.tripNumber || '').replace(/"/g, '""')}"`,
+          `"=""${(s.chinaCode || '').replace(/"/g, '""')}"""`,
+          `"=""${(s.trackingCode || '').replace(/"/g, '""')}"""`,
+          `"=""${(s.shaheenCode || '').replace(/"/g, '""')}"""`,
+          `"=""${(s.tripNumber || '').replace(/"/g, '""')}"""`,
           qty,
           cbm,
           cbmp,
