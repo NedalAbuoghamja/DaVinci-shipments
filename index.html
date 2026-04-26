@@ -62,6 +62,7 @@
               <select id="status" required>
                 <option value="تم الطلب وفي انتظار التجهيز">تم الطلب وفي انتظار التجهيز</option>
                 <option value="في طريقها لمخزن الصين">في طريقها لمخزن الصين</option>
+                <option value="الآن في مخزن الصين">الآن في مخزن الصين</option>
                 <option value="في الشحن الدولي">في الشحن الدولي (في البحر/الجو)</option>
                 <option value="في ميناء الوصول (الجمارك)">في ميناء الوصول (الجمارك)</option>
                 <option value="جاهزة للتسليم محلياً">جاهزة للتسليم محلياً</option>
@@ -110,8 +111,11 @@
               <span>التكلفة المتوقعة بالدينار:</span>
               <span id="costPreviewLYD" class="highlight">0.00 د.ل</span>
             </div>
-            <button type="submit" class="btn-primary">
+            <button type="submit" id="submitBtn" class="btn-primary" style="flex: 1;">
               <i class="fa-solid fa-plus"></i> إضافة الشحنة
+            </button>
+            <button type="button" id="cancelEditBtn" class="btn-secondary" style="display: none; padding: 12px 20px; border-radius: 8px; border: none; background: rgba(255,255,255,0.1); color: white; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 600;">
+              <i class="fa-solid fa-times"></i> إلغاء التصحيح
             </button>
           </div>
         </form>

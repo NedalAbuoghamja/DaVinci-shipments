@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAcP3Ud60BC-RKD7bYVBx8bcro--L4mkLQ",
@@ -18,6 +18,7 @@ const shipmentsRef = ref(db, 'shipments');
 
 let shipments = [];
 let currentExchangeRate = 7.00;
+let editingShipmentId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('shipmentForm');
@@ -97,10 +98,64 @@ document.addEventListener('DOMContentLoaded', () => {
       timestamp: Date.now() // For sorting
     };
 
-    // Push DIRECTLY to Firebase Cloud ☁️
-    push(shipmentsRef, newShipment);
+    // Push DIRECTLY to Firebase Cloud ☁️ or Update if editing
+    if (editingShipmentId) {
+      if (!imageBase64) {
+        // preserve old image if new one is not selected
+        const oldShip = shipments.find(s => s.id === editingShipmentId);
+        if(oldShip) {
+          newShipment.image = oldShip.image;
+          newShipment.createdAt = oldShip.createdAt;
+          newShipment.timestamp = oldShip.timestamp;
+        }
+      }
+      update(ref(db, 'shipments/' + editingShipmentId), newShipment);
+      document.getElementById('cancelEditBtn').click(); // to reset UI
+    } else {
+      push(shipmentsRef, newShipment);
+      form.reset();
+      updateCostPreview();
+    }
+  });
+
+  // Global edit function
+  window.editShipment = function(id) {
+    const shipment = shipments.find(s => s.id === id);
+    if (!shipment) return;
+
+    editingShipmentId = id;
     
+    // Populate form
+    document.getElementById('itemName').value = shipment.itemName || '';
+    document.getElementById('chinaCode').value = shipment.chinaCode || '';
+    document.getElementById('trackingCode').value = (shipment.trackingCode !== 'لم يتم الإصدار بعد') ? shipment.trackingCode : '';
+    document.getElementById('costUSD').value = shipment.costUSD || '';
+    document.getElementById('status').value = shipment.status || '';
+    document.getElementById('dateChina').value = shipment.dateChina || '';
+    document.getElementById('dateDeparture').value = shipment.dateDeparture || '';
+    document.getElementById('dateLibya').value = shipment.dateLibya || '';
+    document.getElementById('shaheenCode').value = shipment.shaheenCode || '';
+    document.getElementById('tripNumber').value = shipment.tripNumber || '';
+    
+    // Update buttons
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> حفظ التعديلات';
+    submitBtn.style.background = 'var(--status-ready)';
+    document.getElementById('cancelEditBtn').style.display = 'block';
+
+    updateCostPreview();
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  document.getElementById('cancelEditBtn').addEventListener('click', () => {
+    editingShipmentId = null;
     form.reset();
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.innerHTML = '<i class="fa-solid fa-plus"></i> إضافة الشحنة';
+    submitBtn.style.background = 'var(--primary-color)';
+    document.getElementById('cancelEditBtn').style.display = 'none';
     updateCostPreview();
   });
 
@@ -151,10 +206,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const card = document.createElement('div');
       card.className = 'shipment-card fade-in';
       card.innerHTML = `
-        <button class="delete-btn" onclick="deleteShipment('${shipment.id}')" title="حذف الشحنة من السحابة">
-          <i class="fa-solid fa-trash"></i>
-        </button>
         <div class="card-image-holder">
+          <div class="card-actions" style="position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; gap: 8px;">
+            <button class="edit-btn" onclick="editShipment('${shipment.id}')" title="تعديل الشحنة" style="background: var(--status-ready); color: white; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"><i class="fa-solid fa-pen"></i></button>
+            <button class="delete-btn" onclick="deleteShipment('${shipment.id}')" title="حذف الشحنة من السحابة" style="background: var(--status-pending); color: white; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: static;"><i class="fa-solid fa-trash"></i></button>
+          </div>
           <div class="status-badge" style="color: ${statusColor}; border-color: ${statusColor}">
             ${shipment.status}
           </div>
