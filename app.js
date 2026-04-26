@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const costPreviewLYD = document.getElementById('costPreviewLYD');
   const shipmentsContainer = document.getElementById('shipmentsContainer');
   const totalShipmentsCount = document.getElementById('totalShipmentsCount');
+  
+  // Search & Filter
+  const searchInput = document.getElementById('searchInput');
+  const statusFilter = document.getElementById('statusFilter');
 
   // Load user's preferred exchange rate from LocalStorage
   currentExchangeRate = parseFloat(localStorage.getItem('exchangeRate')) || 7.00;
@@ -53,6 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if(quantityInput) quantityInput.addEventListener('input', updateCostPreview);
   if(cbmQuantityInput) cbmQuantityInput.addEventListener('input', updateCostPreview);
   if(cbmPriceInput) cbmPriceInput.addEventListener('input', updateCostPreview);
+
+  // Search and filter listeners
+  if(searchInput) searchInput.addEventListener('input', renderShipments);
+  if(statusFilter) statusFilter.addEventListener('change', renderShipments);
 
   // Update Exchange Rate globally
   globalExchangeRateInput.addEventListener('input', (e) => {
@@ -223,15 +231,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render HTML based on Firebase Data
   function renderShipments() {
     shipmentsContainer.innerHTML = '';
-    totalShipmentsCount.textContent = shipments.length;
+    
+    let filteredShipments = [...shipments];
+    
+    // Apply Status Filter
+    if (statusFilter && statusFilter.value !== 'الكل') {
+      filteredShipments = filteredShipments.filter(s => s.status === statusFilter.value);
+    }
+    
+    // Apply Search
+    if (searchInput && searchInput.value.trim() !== '') {
+      const q = searchInput.value.toLowerCase().trim();
+      filteredShipments = filteredShipments.filter(s => {
+        return (s.itemName && s.itemName.toLowerCase().includes(q)) ||
+               (s.chinaCode && s.chinaCode.toLowerCase().includes(q)) ||
+               (s.trackingCode && s.trackingCode.toLowerCase().includes(q)) ||
+               (s.shaheenCode && s.shaheenCode.toLowerCase().includes(q)) ||
+               (s.tripNumber && s.tripNumber.toLowerCase().includes(q));
+      });
+    }
 
-    if (shipments.length === 0) {
-      shipmentsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">لا توجد شحنات مسجلة في التخزين السحابي...</p>';
+    totalShipmentsCount.textContent = filteredShipments.length;
+
+    if (filteredShipments.length === 0) {
+      shipmentsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">لا توجد شحنات مطابقة للبحث أو الفلتر...</p>';
       return;
     }
 
     // Sort newest first
-    shipments.sort((a,b) => b.timestamp - a.timestamp).forEach(shipment => {
+    filteredShipments.sort((a,b) => b.timestamp - a.timestamp).forEach(shipment => {
       const qty = shipment.quantity || 1;
       const cbm = shipment.cbmQuantity || 0;
       const cbmp = shipment.cbmPrice || 0;

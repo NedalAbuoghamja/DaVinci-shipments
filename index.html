@@ -148,6 +148,25 @@
           <h2><i class="fa-solid fa-cubes"></i> شحناتي الحالية</h2>
           <div class="stats glass-badge">إجمالي شحناتك: <span id="totalShipmentsCount">0</span></div>
         </div>
+
+        <div class="search-filter-container glass-panel" style="margin-bottom: 2rem; padding: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; border-radius: 12px;">
+          <div class="form-group" style="flex: 2; min-width: 250px;">
+            <input type="text" id="searchInput" placeholder="بحث بالاسم، كود الصين، كود التتبع، كود الشاهين..." style="width: 100%;">
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 200px;">
+            <select id="statusFilter" style="width: 100%;">
+              <option value="الكل">جميع الحالات</option>
+              <option value="تم الطلب وفي انتظار التجهيز">تم الطلب وفي انتظار التجهيز</option>
+              <option value="في طريقها لمخزن الصين">في طريقها لمخزن الصين</option>
+              <option value="الآن في مخزن الصين">الآن في مخزن الصين</option>
+              <option value="واصلة لمخزن الصين ورايحة">واصلة لمخزن الصين ورايحة (مفقودة)</option>
+              <option value="في الشحن الدولي">في الشحن الدولي</option>
+              <option value="في ميناء الوصول (الجمارك)">في ميناء الوصول (الجمارك)</option>
+              <option value="جاهزة للتسليم محلياً">جاهزة للتسليم محلياً</option>
+              <option value="تم الاستلام">تم الاستلام ✅</option>
+            </select>
+          </div>
+        </div>
         
         <div class="shipments-grid" id="shipmentsContainer">
           <!-- Cards will be injected by JavaScript -->
