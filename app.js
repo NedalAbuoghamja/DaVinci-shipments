@@ -269,6 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const unitCostWithShippingUsd = totalCostUsd / qty;
 
       const lydCost = (totalCostUsd * currentExchangeRate).toFixed(2);
+      const unitCostLyd = (unitCostUsd * currentExchangeRate).toFixed(2);
+      const unitCostWithShippingLyd = (unitCostWithShippingUsd * currentExchangeRate).toFixed(2);
       
       let statusColor = 'var(--status-transit)';
       if (shipment.status.includes('تم الطلب')) statusColor = 'var(--status-pending)';
@@ -307,14 +309,14 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
 
           <div class="card-price" style="flex-direction: column; align-items: stretch; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted); align-items: center;">
               <span>تكلفة القطعة (بدون شحن):</span>
-              <span>$${unitCostUsd.toFixed(2)}</span>
+              <span dir="ltr">$${unitCostUsd.toFixed(2)} &nbsp;|&nbsp; ${unitCostLyd} د.ل</span>
             </div>
             ${(cbm > 0) ? `
-            <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted); align-items: center;">
               <span>تكلفة القطعة (بالشحن):</span>
-              <span style="color: var(--status-ready); font-weight: 700;">$${unitCostWithShippingUsd.toFixed(2)}</span>
+              <span dir="ltr" style="color: var(--status-ready); font-weight: 700;">$${unitCostWithShippingUsd.toFixed(2)} &nbsp;|&nbsp; ${unitCostWithShippingLyd} د.ل</span>
             </div>
             ` : ''}
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 4px;">
