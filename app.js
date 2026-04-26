@@ -253,7 +253,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (toExport.length === 0) {
-        alert("لا توجد شحنات مطابقة للفلتر لتصديرها.");
+        alert("لا توجد شحنات متاحة للتصدير.");
+        return;
+      }
+
+      const selectedBoxes = document.querySelectorAll('.shipment-cb:checked');
+      if (selectedBoxes.length > 0) {
+        const selectedIds = Array.from(selectedBoxes).map(cb => cb.value);
+        toExport = toExport.filter(s => selectedIds.includes(s.id));
+      } else {
+        alert("الرجاء تحديد الشحنات التي تريد تصديرها من القائمة أولاً.");
         return;
       }
 
@@ -303,6 +312,18 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    });
+  }
+
+  // Select All button functionality
+  const selectAllBtn = document.getElementById('selectAllBtn');
+  let allSelected = false;
+  if(selectAllBtn) {
+    selectAllBtn.addEventListener('click', () => {
+      allSelected = !allSelected;
+      const checkboxes = document.querySelectorAll('.shipment-cb');
+      checkboxes.forEach(cb => cb.checked = allSelected);
+      selectAllBtn.innerHTML = allSelected ? '<i class="fa-solid fa-xmark"></i> إلغاء التحديد' : '<i class="fa-solid fa-check-double"></i> تحديد الكل';
     });
   }
 
@@ -371,7 +392,10 @@ document.addEventListener('DOMContentLoaded', () => {
             : `<i class="fa-solid fa-box no-image"></i>`}
         </div>
         <div class="card-content">
-          <h3 class="card-title">${shipment.itemName}</h3>
+          <h3 class="card-title" style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <span>${shipment.itemName}</span>
+            <input type="checkbox" class="shipment-cb" value="${shipment.id}" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-accent);">
+          </h3>
           
           <div class="card-details">
             <p><i class="fa-solid fa-barcode"></i> كود الصين: <strong>${shipment.chinaCode}</strong></p>
