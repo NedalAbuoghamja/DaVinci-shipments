@@ -120,33 +120,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Global edit function
   window.editShipment = function(id) {
-    const shipment = shipments.find(s => s.id === id);
-    if (!shipment) return;
+    try {
+      const shipment = shipments.find(s => s.id === id);
+      if (!shipment) { alert('لم يتم العثور على الشحنة!'); return; }
 
-    editingShipmentId = id;
-    
-    // Populate form
-    document.getElementById('itemName').value = shipment.itemName || '';
-    document.getElementById('chinaCode').value = shipment.chinaCode || '';
-    document.getElementById('trackingCode').value = (shipment.trackingCode !== 'لم يتم الإصدار بعد') ? shipment.trackingCode : '';
-    document.getElementById('costUSD').value = shipment.costUSD || '';
-    document.getElementById('status').value = shipment.status || '';
-    document.getElementById('dateChina').value = shipment.dateChina || '';
-    document.getElementById('dateDeparture').value = shipment.dateDeparture || '';
-    document.getElementById('dateLibya').value = shipment.dateLibya || '';
-    document.getElementById('shaheenCode').value = shipment.shaheenCode || '';
-    document.getElementById('tripNumber').value = shipment.tripNumber || '';
-    
-    // Update buttons
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> حفظ التعديلات';
-    submitBtn.style.background = 'var(--status-ready)';
-    document.getElementById('cancelEditBtn').style.display = 'block';
+      editingShipmentId = id;
+      
+      // Populate form safely
+      const setVal = (elmId, val) => { const el = document.getElementById(elmId); if (el) el.value = val; };
+      
+      setVal('itemName', shipment.itemName || '');
+      setVal('chinaCode', shipment.chinaCode || '');
+      setVal('trackingCode', (shipment.trackingCode !== 'لم يتم الإصدار بعد') ? shipment.trackingCode : '');
+      setVal('costUSD', shipment.costUSD || '');
+      setVal('status', shipment.status || '');
+      setVal('dateChina', shipment.dateChina || '');
+      setVal('dateDeparture', shipment.dateDeparture || '');
+      setVal('dateLibya', shipment.dateLibya || '');
+      setVal('shaheenCode', shipment.shaheenCode || '');
+      setVal('tripNumber', shipment.tripNumber || '');
+      
+      // Update buttons
+      const submitBtn = document.getElementById('submitBtn');
+      if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> حفظ التعديلات';
+        submitBtn.style.background = 'var(--status-ready)';
+      }
+      const cancelBtn = document.getElementById('cancelEditBtn');
+      if (cancelBtn) cancelBtn.style.display = 'inline-block';
 
-    updateCostPreview();
-    
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      if(typeof updateCostPreview === 'function') updateCostPreview();
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch(err) {
+      alert("حدث خطأ في النظام. يرجى تحديث الصفحة: " + err.message);
+    }
   };
 
   document.getElementById('cancelEditBtn').addEventListener('click', () => {
@@ -177,10 +186,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Global delete function
-  window.deleteShipment = function(id) {
-    if(confirm('هل أنت متأكد من حذف هذه الشحنة نهائياً من جميع الأجهزة؟')) {
-      const itemRef = ref(db, 'shipments/' + id);
-      remove(itemRef); // Removes from Firebase Cloud ☁️
+  window.deleteShipment = async function(id) {
+    try {
+      if(confirm('هل أنت متأكد من حذف هذه الشحنة نهائياً من جميع الأجهزة؟')) {
+        const itemRef = ref(db, 'shipments/' + id);
+        await remove(itemRef); // Removes from Firebase Cloud ☁️
+      }
+    } catch(err) {
+      alert("فشل في حذف الشحنة. تأكد من اتصال الإنترنت وحاول تحديث الصفحة: " + err.message);
     }
   };
 
