@@ -146,7 +146,10 @@
       <section class="shipments-list-section">
         <div class="section-header">
           <h2><i class="fa-solid fa-cubes"></i> شحناتي الحالية</h2>
-          <div class="stats glass-badge">إجمالي شحناتك: <span id="totalShipmentsCount">0</span></div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="exportExcelBtn" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-file-excel"></i> تصدير إكسيل</button>
+            <div class="stats glass-badge">إجمالي شحناتك: <span id="totalShipmentsCount">0</span></div>
+          </div>
         </div>
 
         <div class="search-filter-container glass-panel" style="margin-bottom: 2rem; padding: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; border-radius: 12px;">

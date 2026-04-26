@@ -228,6 +228,84 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // Export to Excel (CSV)
+  const exportBtn = document.getElementById('exportExcelBtn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      if (shipments.length === 0) {
+        alert("لا توجد شحنات لتصديرها.");
+        return;
+      }
+
+      let toExport = shipments;
+      if (statusFilter && statusFilter.value !== 'الكل') {
+        toExport = toExport.filter(s => s.status === statusFilter.value);
+      }
+      if (searchInput && searchInput.value.trim() !== '') {
+        const q = searchInput.value.toLowerCase().trim();
+        toExport = toExport.filter(s => {
+          return (s.itemName && s.itemName.toLowerCase().includes(q)) ||
+                 (s.chinaCode && s.chinaCode.toLowerCase().includes(q)) ||
+                 (s.trackingCode && s.trackingCode.toLowerCase().includes(q)) ||
+                 (s.shaheenCode && s.shaheenCode.toLowerCase().includes(q)) ||
+                 (s.tripNumber && s.tripNumber.toLowerCase().includes(q));
+        });
+      }
+
+      if (toExport.length === 0) {
+        alert("لا توجد شحنات مطابقة للفلتر لتصديرها.");
+        return;
+      }
+
+      toExport.sort((a,b) => b.timestamp - a.timestamp);
+
+      const headers = ['اسم الشحنة', 'كود الصين', 'رقم التتبع', 'رقم الشحنة (الشاهين)', 'رقم الرحلة (الشاهين)', 'الكمية', 'حجم CBM', 'سعر CBM', 'إجمالي الشحن ($)', 'تكلفة البضاعة ($)', 'تكلفة القطعة بدون شحن ($)', 'تكلفة القطعة بالشحن ($)', 'التكلفة الكلية ($)', 'التكلفة الكلية (د.ل)', 'الحالة'];
+      
+      let csvContent = '\uFEFF' + headers.join(',') + '\n';
+      
+      toExport.forEach(s => {
+        const qty = s.quantity || 1;
+        const cbm = s.cbmQuantity || 0;
+        const cbmp = s.cbmPrice || 0;
+        const totalShippingUsd = cbm * cbmp;
+        const totalCostUsd = s.costUSD + totalShippingUsd;
+        
+        const unitCostUsd = s.costUSD / qty;
+        const unitCostWithShippingUsd = totalCostUsd / qty;
+        const lydCost = totalCostUsd * currentExchangeRate;
+
+        const row = [
+          `"${(s.itemName || '').replace(/"/g, '""')}"`,
+          `"${(s.chinaCode || '').replace(/"/g, '""')}"`,
+          `"${(s.trackingCode || '').replace(/"/g, '""')}"`,
+          `"${(s.shaheenCode || '').replace(/"/g, '""')}"`,
+          `"${(s.tripNumber || '').replace(/"/g, '""')}"`,
+          qty,
+          cbm,
+          cbmp,
+          totalShippingUsd.toFixed(2),
+          s.costUSD.toFixed(2),
+          unitCostUsd.toFixed(2),
+          unitCostWithShippingUsd.toFixed(2),
+          totalCostUsd.toFixed(2),
+          lydCost.toFixed(2),
+          `"${(s.status || '').replace(/"/g, '""')}"`
+        ];
+        csvContent += row.join(',') + '\n';
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `shipments_${new Date().toLocaleDateString('en-GB').replace(/\//g,'-')}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  }
+
   // Render HTML based on Firebase Data
   function renderShipments() {
     shipmentsContainer.innerHTML = '';
