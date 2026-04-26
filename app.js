@@ -70,6 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateDeparture = document.getElementById('dateDeparture').value;
     const dateLibya = document.getElementById('dateLibya').value;
 
+    // Al-Shaheen info
+    const shaheenCode = document.getElementById('shaheenCode').value;
+    const shipmentNumber = document.getElementById('shipmentNumber').value;
+    const tripNumber = document.getElementById('tripNumber').value;
+
     const imageInput = document.getElementById('itemImage');
 
     let imageBase64 = null;
@@ -86,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
       dateChina,
       dateDeparture,
       dateLibya,
+      shaheenCode,
+      shipmentNumber,
+      tripNumber,
       image: imageBase64,
       createdAt: new Date().toLocaleDateString('ar-LY'),
       timestamp: Date.now() // For sorting
@@ -162,6 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="card-details">
             <p><i class="fa-solid fa-barcode"></i> كود الصين: <strong>${shipment.chinaCode}</strong></p>
             <p><i class="fa-solid fa-truck-fast"></i> رقم التتبع: <strong>${shipment.trackingCode}</strong></p>
+            ${shipment.shaheenCode ? `<p><i class="fa-solid fa-warehouse"></i> كود مخزن الشاهين: <strong>${shipment.shaheenCode}</strong></p>` : ''}
+            ${shipment.shipmentNumber ? `<p><i class="fa-solid fa-hashtag"></i> رقم الشحنة: <strong>${shipment.shipmentNumber}</strong></p>` : ''}
+            ${shipment.tripNumber ? `<p><i class="fa-solid fa-plane"></i> رقم الرحلة: <strong>${shipment.tripNumber}</strong></p>` : ''}
             <p><i class="fa-solid fa-calendar-plus"></i> تاريخ الإضافة: <strong>${shipment.createdAt}</strong></p>
             ${shipment.dateChina ? `<p><i class="fa-solid fa-building-flag"></i> وصل مخزن الصين: <strong style="color:var(--status-pending)">${shipment.dateChina}</strong></p>` : ''}
             ${shipment.dateDeparture ? `<p><i class="fa-solid fa-plane-departure"></i> غادر الصين: <strong style="color:var(--status-transit)">${shipment.dateDeparture}</strong></p>` : ''}
