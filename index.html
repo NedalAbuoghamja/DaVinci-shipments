@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منظومة إدارة الشحنات الذكية | Smart Shipment Manager</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo-area">
+        <h1><i class="fa-solid fa-ship"></i> منصة الشحنات العالمية</h1>
+        <p>إدارة وتتبع مشتريات الصين الخاصة بك</p>
+      </div>
+      <div class="global-settings glass-panel">
+        <label for="globalExchangeRate"><i class="fa-solid fa-money-bill-transfer"></i> سعر صرف الدولار مقابل الدينار:</label>
+        <div class="input-group">
+          <input type="number" id="globalExchangeRate" value="7.00" step="0.01">
+          <span class="currency">د.ل</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Add New Shipment Section -->
+      <section class="add-shipment-section glass-panel fade-in">
+        <h2><i class="fa-solid fa-box-open"></i> تسجيل شحنة جديدة</h2>
+        <form id="shipmentForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="itemName">اسم الشحنة / المنتج</label>
+              <input type="text" id="itemName" placeholder="مثال: شاشات هاتف, ملابس..." required>
+            </div>
+            
+            <div class="form-group">
+              <label for="chinaCode">كود الصين (رقم الطلبية)</label>
+              <input type="text" id="chinaCode" placeholder="رقم الطلب من المورد" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="trackingCode">كود التتبع الدولي</label>
+              <input type="text" id="trackingCode" placeholder="رقم تتبع شركة الشحن">
+            </div>
+
+            <div class="form-group">
+              <label for="costUSD">التكلفة (بالدولار $)</label>
+              <input type="number" id="costUSD" placeholder="0.00" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+              <label for="status">حالة الشحنة (تتبع)</label>
+              <select id="status" required>
+                <option value="تم الطلب وفي انتظار التجهيز">تم الطلب وفي انتظار التجهيز</option>
+                <option value="في طريقها لمخزن الصين">في طريقها لمخزن الصين</option>
+                <option value="في الشحن الدولي">في الشحن الدولي (في البحر/الجو)</option>
+                <option value="في ميناء الوصول (الجمارك)">في ميناء الوصول (الجمارك)</option>
+                <option value="جاهزة للتسليم محلياً">جاهزة للتسليم محلياً</option>
+                <option value="تم الاستلام">تم الاستلام ✅</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="dateChina">تاريخ الوصول لمخزن الصين</label>
+              <input type="date" id="dateChina" class="date-input">
+            </div>
+
+            <div class="form-group">
+              <label for="dateDeparture">تاريخ الخروج من الصين</label>
+              <input type="date" id="dateDeparture" class="date-input">
+            </div>
+
+            <div class="form-group">
+              <label for="dateLibya">تاريخ الوصول لليبيا</label>
+              <input type="date" id="dateLibya" class="date-input">
+            </div>
+
+            <div class="form-group file-upload-group">
+              <label for="itemImage">إرفاق صورة <i class="fa-solid fa-cloud-arrow-up"></i></label>
+              <input type="file" id="itemImage" accept="image/*">
+            </div>
+          </div>
+          
+          <div class="form-summary">
+            <div class="cost-preview">
+              <span>التكلفة المتوقعة بالدينار:</span>
+              <span id="costPreviewLYD" class="highlight">0.00 د.ل</span>
+            </div>
+            <button type="submit" class="btn-primary">
+              <i class="fa-solid fa-plus"></i> إضافة الشحنة
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Shipments List Section -->
+      <section class="shipments-list-section">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-cubes"></i> شحناتي الحالية</h2>
+          <div class="stats glass-badge">إجمالي شحناتك: <span id="totalShipmentsCount">0</span></div>
+        </div>
+        
+        <div class="shipments-grid" id="shipmentsContainer">
+          <!-- Cards will be injected by JavaScript -->
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
