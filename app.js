@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('shipmentForm');
   const globalExchangeRateInput = document.getElementById('globalExchangeRate');
   const costUSDInput = document.getElementById('costUSD');
+  const quantityInput = document.getElementById('quantity');
+  const cbmQuantityInput = document.getElementById('cbmQuantity');
+  const cbmPriceInput = document.getElementById('cbmPrice');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
   const shipmentsContainer = document.getElementById('shipmentsContainer');
   const totalShipmentsCount = document.getElementById('totalShipmentsCount');
@@ -47,6 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Calculate LYD automatically when USD typed
   costUSDInput.addEventListener('input', updateCostPreview);
+  if(quantityInput) quantityInput.addEventListener('input', updateCostPreview);
+  if(cbmQuantityInput) cbmQuantityInput.addEventListener('input', updateCostPreview);
+  if(cbmPriceInput) cbmPriceInput.addEventListener('input', updateCostPreview);
 
   // Update Exchange Rate globally
   globalExchangeRateInput.addEventListener('input', (e) => {
@@ -93,6 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
       dateLibya,
       shaheenCode,
       tripNumber,
+      quantity,
+      cbmQuantity,
+      cbmPrice,
       image: imageBase64,
       createdAt: new Date().toLocaleDateString('ar-LY'),
       timestamp: Date.now() // For sorting
@@ -133,6 +142,9 @@ document.addEventListener('DOMContentLoaded', () => {
       setVal('chinaCode', shipment.chinaCode || '');
       setVal('trackingCode', (shipment.trackingCode !== 'لم يتم الإصدار بعد') ? shipment.trackingCode : '');
       setVal('costUSD', shipment.costUSD || '');
+      setVal('quantity', shipment.quantity || 1);
+      setVal('cbmQuantity', shipment.cbmQuantity || '');
+      setVal('cbmPrice', shipment.cbmPrice || '');
       setVal('status', shipment.status || '');
       setVal('dateChina', shipment.dateChina || '');
       setVal('dateDeparture', shipment.dateDeparture || '');
@@ -181,7 +193,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Update LYD label directly
   function updateCostPreview() {
     const usd = parseFloat(costUSDInput.value) || 0;
-    const lyd = (usd * currentExchangeRate).toFixed(2);
+    const cbmQ = cbmQuantityInput ? (parseFloat(cbmQuantityInput.value) || 0) : 0;
+    const cbmP = cbmPriceInput ? (parseFloat(cbmPriceInput.value) || 0) : 0;
+    const shippingUsd = cbmQ * cbmP;
+    
+    // total is goods + shipping
+    const totalUsd = usd + shippingUsd;
+
+    const lyd = (totalUsd * currentExchangeRate).toFixed(2);
     costPreviewLYD.textContent = `${lyd} د.ل`;
   }
 
@@ -209,7 +228,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Sort newest first
     shipments.sort((a,b) => b.timestamp - a.timestamp).forEach(shipment => {
-      const lydCost = (shipment.costUSD * currentExchangeRate).toFixed(2);
+      const qty = shipment.quantity || 1;
+      const cbm = shipment.cbmQuantity || 0;
+      const cbmp = shipment.cbmPrice || 0;
+      const totalShippingUsd = cbm * cbmp;
+      const totalCostUsd = shipment.costUSD + totalShippingUsd;
+      const unitCostUsd = shipment.costUSD / qty;
+
+      const lydCost = (totalCostUsd * currentExchangeRate).toFixed(2);
       
       let statusColor = 'var(--status-transit)';
       if (shipment.status.includes('تم الطلب')) statusColor = 'var(--status-pending)';
@@ -237,6 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="card-details">
             <p><i class="fa-solid fa-barcode"></i> كود الصين: <strong>${shipment.chinaCode}</strong></p>
             <p><i class="fa-solid fa-truck-fast"></i> رقم التتبع: <strong>${shipment.trackingCode}</strong></p>
+            <p><i class="fa-solid fa-boxes-stacked"></i> الكمية: <strong style="color:var(--primary-accent)">${qty} قطع/كراتين</strong></p>
+            ${(cbm > 0) ? `<p><i class="fa-solid fa-truck-ramp-box"></i> إجمالي الشحن (CBM): <strong style="color:var(--status-pending)">$${totalShippingUsd.toFixed(2)}</strong></p>` : ''}
             ${shipment.shaheenCode ? `<p><i class="fa-solid fa-warehouse"></i> رقم الشحنة (مؤسسة الشاهين): <strong>${shipment.shaheenCode}</strong></p>` : ''}
             ${shipment.tripNumber ? `<p><i class="fa-solid fa-plane"></i> رقم الرحلة (الشاهين): <strong>${shipment.tripNumber}</strong></p>` : ''}
             <p><i class="fa-solid fa-calendar-plus"></i> تاريخ الإضافة: <strong>${shipment.createdAt}</strong></p>
@@ -245,9 +273,15 @@ document.addEventListener('DOMContentLoaded', () => {
             ${shipment.dateLibya ? `<p><i class="fa-solid fa-location-dot"></i> وصل ليبيا: <strong style="color:var(--status-ready)">${shipment.dateLibya}</strong></p>` : ''}
           </div>
 
-          <div class="card-price">
-            <div class="usd">التكلفة: $${shipment.costUSD.toFixed(2)}</div>
-            <div class="lyd">${lydCost} د.ل</div>
+          <div class="card-price" style="flex-direction: column; align-items: stretch; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted);">
+              <span>تكلفة القطعة (بدون شحن):</span>
+              <span>$${unitCostUsd.toFixed(2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 4px;">
+              <div class="usd">الإجمالي الكلي: $${totalCostUsd.toFixed(2)}</div>
+              <div class="lyd" style="font-size: 1.4rem;">${lydCost} د.ل</div>
+            </div>
           </div>
         </div>
       `;
