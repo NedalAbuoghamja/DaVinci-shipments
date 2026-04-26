@@ -266,6 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const totalShippingUsd = cbm * cbmp;
       const totalCostUsd = shipment.costUSD + totalShippingUsd;
       const unitCostUsd = shipment.costUSD / qty;
+      const unitCostWithShippingUsd = totalCostUsd / qty;
 
       const lydCost = (totalCostUsd * currentExchangeRate).toFixed(2);
       
@@ -310,6 +311,12 @@ document.addEventListener('DOMContentLoaded', () => {
               <span>تكلفة القطعة (بدون شحن):</span>
               <span>$${unitCostUsd.toFixed(2)}</span>
             </div>
+            ${(cbm > 0) ? `
+            <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted);">
+              <span>تكلفة القطعة (بالشحن):</span>
+              <span style="color: var(--status-ready); font-weight: 700;">$${unitCostWithShippingUsd.toFixed(2)}</span>
+            </div>
+            ` : ''}
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 4px;">
               <div class="usd">الإجمالي الكلي: $${totalCostUsd.toFixed(2)}</div>
               <div class="lyd" style="font-size: 1.4rem;">${lydCost} د.ل</div>
