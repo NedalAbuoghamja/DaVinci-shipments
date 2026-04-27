@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAcP3Ud60BC-RKD7bYVBx8bcro--L4mkLQ",
@@ -14,7 +15,9 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const shipmentsRef = ref(db, 'shipments');
+const auth = getAuth(app);
+let shipmentsRef = null;
+let currentUserId = null;
 
 let shipments = [];
 let currentExchangeRate = 7.00;
@@ -39,18 +42,114 @@ document.addEventListener('DOMContentLoaded', () => {
   currentExchangeRate = parseFloat(localStorage.getItem('exchangeRate')) || 7.00;
   globalExchangeRateInput.value = currentExchangeRate;
 
-  // Real-time Sync from Firebase
-  onValue(shipmentsRef, (snapshot) => {
-    const data = snapshot.val();
-    shipments = [];
-    if (data) {
-      for (let key in data) {
-        shipments.push({ id: key, ...data[key] });
+  const authOverlay = document.getElementById('authOverlay');
+  const authForm = document.getElementById('authForm');
+  const authEmailInput = document.getElementById('authEmail');
+  const authPasswordInput = document.getElementById('authPassword');
+  const signupBtn = document.getElementById('signupBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const authError = document.getElementById('authError');
+  const appContainer = document.querySelector('.app-container');
+
+  // Handle Authentication State Changes
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUserId = user.uid;
+      
+      // Check if user is frozen by admin
+      onValue(ref(db, 'admin/users/' + currentUserId), (snap) => {
+        const profile = snap.val();
+        if (profile && profile.status === 'frozen') {
+           alert('تم تجميد حسابك من قبل الإدارة. يرجى التواصل مع الدعم الفني.');
+           signOut(auth);
+           return;
+        }
+      });
+
+      // Show Admin Dashboard button if Nedal
+      const adminBtnHeader = document.getElementById('adminBtnHeader');
+      if (user.email === 'nedal@davinci.com' && adminBtnHeader) {
+         adminBtnHeader.style.display = 'block';
+      } else if (adminBtnHeader) {
+         adminBtnHeader.style.display = 'none';
       }
+
+      shipmentsRef = ref(db, 'users/' + currentUserId + '/shipments');
+      if (authOverlay) authOverlay.classList.add('hidden');
+      if (appContainer) appContainer.style.display = 'block';
+
+      // Real-time Sync from Firebase specific to this user
+      onValue(shipmentsRef, (snapshot) => {
+        const data = snapshot.val();
+        shipments = [];
+        if (data) {
+          for (let key in data) {
+            shipments.push({ id: key, ...data[key] });
+          }
+        }
+        renderShipments();
+      });
+    } else {
+      currentUserId = null;
+      shipmentsRef = null;
+      shipments = [];
+      renderShipments();
+      if (authOverlay) authOverlay.classList.remove('hidden');
+      if (appContainer) appContainer.style.display = 'none';
+      if (document.getElementById('cancelEditBtn')) document.getElementById('cancelEditBtn').click();
     }
-    // Render shipments
-    renderShipments();
   });
+
+  if (authForm) {
+    authForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      let email = authEmailInput.value.trim().toLowerCase();
+      if (email === 'nedal') email = 'nedal@davinci.com';
+      let pwd = authPasswordInput.value;
+      if (pwd === '11111') pwd = '111111';
+
+      authError.textContent = 'جاري تسجيل الدخول...';
+      signInWithEmailAndPassword(auth, email, pwd)
+        .then((cred) => { 
+          update(ref(db, 'admin/users/' + cred.user.uid), { email: email, lastLogin: Date.now() });
+          authError.textContent = ''; 
+          authForm.reset(); 
+        })
+        .catch(error => { authError.textContent = 'بيانات الدخول غير صحيحة: ' + error.message; });
+    });
+  }
+
+  if (signupBtn) {
+    signupBtn.addEventListener('click', () => {
+      let email = authEmailInput.value.trim().toLowerCase();
+      if (email === 'nedal') email = 'nedal@davinci.com';
+      let pwd = authPasswordInput.value;
+      if (pwd === '11111') pwd = '111111';
+
+      if(!email || pwd.length < 6) {
+        authError.textContent = pwd.length < 6 ? 'يرجى إدخال كلمة مرور من 6 أحرف على الأقل.' : 'يرجى إدخال بريد صحيح لتسجيل الحساب.';
+        return;
+      }
+      authError.textContent = 'جاري إنشاء الحساب...';
+      createUserWithEmailAndPassword(auth, email, pwd)
+        .then((cred) => { 
+          update(ref(db, 'admin/users/' + cred.user.uid), { email: email, status: 'active', createdAt: Date.now(), lastLogin: Date.now() });
+          authError.textContent = ''; 
+          authForm.reset(); 
+          alert('تم إنشاء الحساب بنجاح! تم تسجيل دخولك.'); 
+        })
+        .catch(error => { authError.textContent = 'خطأ في إنشاء الحساب: ' + error.message; });
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      signOut(auth).then(() => {
+        if(authForm) authForm.reset();
+        localStorage.removeItem('shipmentDraft'); // Clear draft on logout
+      });
+    });
+  }
 
   // Calculate LYD automatically when USD typed
   costUSDInput.addEventListener('input', updateCostPreview);
@@ -69,6 +168,50 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCostPreview();
     renderShipments(); // Update all cards
   });
+
+  function saveFormDraft() {
+    if (editingShipmentId) return;
+    const draft = {
+      itemName: document.getElementById('itemName').value,
+      chinaCode: document.getElementById('chinaCode').value,
+      trackingCode: document.getElementById('trackingCode').value,
+      quantity: document.getElementById('quantity').value,
+      costUSD: document.getElementById('costUSD').value,
+      cbmQuantity: document.getElementById('cbmQuantity').value,
+      cbmPrice: document.getElementById('cbmPrice').value,
+      status: document.getElementById('status').value,
+      dateChina: document.getElementById('dateChina').value,
+      dateDeparture: document.getElementById('dateDeparture').value,
+      dateLibya: document.getElementById('dateLibya').value,
+      shaheenCode: document.getElementById('shaheenCode').value,
+      tripNumber: document.getElementById('tripNumber').value
+    };
+    localStorage.setItem('shipmentDraft', JSON.stringify(draft));
+  }
+
+  function loadFormDraft() {
+    const dStr = localStorage.getItem('shipmentDraft');
+    if (!dStr) return;
+    try {
+      const d = JSON.parse(dStr);
+      if(d.itemName) document.getElementById('itemName').value = d.itemName;
+      if(d.chinaCode) document.getElementById('chinaCode').value = d.chinaCode;
+      if(d.trackingCode) document.getElementById('trackingCode').value = d.trackingCode;
+      if(d.quantity) document.getElementById('quantity').value = d.quantity;
+      if(d.costUSD) document.getElementById('costUSD').value = d.costUSD;
+      if(d.cbmQuantity) document.getElementById('cbmQuantity').value = d.cbmQuantity;
+      if(d.cbmPrice) document.getElementById('cbmPrice').value = d.cbmPrice;
+      if(d.status) document.getElementById('status').value = d.status;
+      if(d.dateChina) document.getElementById('dateChina').value = d.dateChina;
+      if(d.dateDeparture) document.getElementById('dateDeparture').value = d.dateDeparture;
+      if(d.dateLibya) document.getElementById('dateLibya').value = d.dateLibya;
+      if(d.shaheenCode) document.getElementById('shaheenCode').value = d.shaheenCode;
+      if(d.tripNumber) document.getElementById('tripNumber').value = d.tripNumber;
+    } catch(e) {}
+  }
+
+  form.addEventListener('input', saveFormDraft);
+  loadFormDraft(); // Load draft on startup
 
   // Add new shipment via Form
   form.addEventListener('submit', async (e) => {
@@ -130,11 +273,12 @@ document.addEventListener('DOMContentLoaded', () => {
           newShipment.timestamp = oldShip.timestamp;
         }
       }
-      update(ref(db, 'shipments/' + editingShipmentId), newShipment);
+      update(ref(db, 'users/' + currentUserId + '/shipments/' + editingShipmentId), newShipment);
       document.getElementById('cancelEditBtn').click(); // to reset UI
     } else {
-      push(shipmentsRef, newShipment);
+      if(shipmentsRef) push(shipmentsRef, newShipment);
       form.reset();
+      localStorage.removeItem('shipmentDraft'); // Clear draft after successful creation
       updateCostPreview();
     }
   });
@@ -185,6 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('cancelEditBtn').addEventListener('click', () => {
     editingShipmentId = null;
     form.reset();
+    loadFormDraft();
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.innerHTML = '<i class="fa-solid fa-plus"></i> إضافة الشحنة';
     submitBtn.style.background = 'var(--primary-color)';
@@ -220,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.deleteShipment = async function(id) {
     try {
       if(confirm('هل أنت متأكد من حذف هذه الشحنة نهائياً من جميع الأجهزة؟')) {
-        const itemRef = ref(db, 'shipments/' + id);
+        const itemRef = ref(db, 'users/' + currentUserId + '/shipments/' + id);
         await remove(itemRef); // Removes from Firebase Cloud ☁️
       }
     } catch(err) {
@@ -434,6 +579,71 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       shipmentsContainer.appendChild(card);
     });
+  }
+
+  // Admin Panel Setup
+  const adminBtnHeader = document.getElementById('adminBtnHeader');
+  const adminOverlay = document.getElementById('adminOverlay');
+  const closeAdminBtn = document.getElementById('closeAdminBtn');
+  const adminUsersTable = document.getElementById('adminUsersTable');
+
+  if (adminBtnHeader && adminOverlay) {
+    adminBtnHeader.addEventListener('click', () => {
+      adminOverlay.classList.remove('hidden');
+      // Load all users
+      onValue(ref(db, 'admin/users'), (snap) => {
+        if(!adminUsersTable) return;
+        adminUsersTable.innerHTML = '';
+        const users = snap.val();
+        if (users) {
+          for (let uid in users) {
+            const u = users[uid];
+            // Skip the admin account itself from being accidentally frozen
+            if(u.email === 'nedal@davinci.com') continue;
+
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+            
+            const isFrozen = u.status === 'frozen';
+            const statusColor = isFrozen ? 'var(--status-customs)' : 'var(--status-ready)';
+            const statusText = isFrozen ? 'مجمد ❄️' : 'نشط ✅';
+            const btnColor = isFrozen ? 'var(--status-ready)' : 'var(--status-pending)';
+            const actionText = isFrozen ? 'تفعيل' : 'تجميد';
+            
+            const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ar-LY') : 'غير محدد';
+            
+            tr.innerHTML = `
+              <td style="padding:10px; font-size:1rem;">${u.email}</td>
+              <td style="padding:10px; font-size:0.9rem;">${dateStr}</td>
+              <td style="padding:10px; color:${statusColor}; font-weight:bold;">${statusText}</td>
+              <td style="padding:10px;">
+                <button onclick="window.toggleUserStatus('${uid}', '${u.status}')" style="background:${btnColor}; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;" title="${actionText} الحساب">${actionText}</button>
+                <button onclick="window.deleteUserRecord('${uid}')" style="background:var(--status-customs); color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; margin-right:5px;" title="حذف السجل"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            `;
+            adminUsersTable.appendChild(tr);
+          }
+        } else {
+           adminUsersTable.innerHTML = '<tr><td colspan="4" style="padding:20px; text-align:center;">لا يوجد مستخدمين مسجلين بعد.</td></tr>';
+        }
+      });
+    });
+
+    closeAdminBtn.addEventListener('click', () => {
+      adminOverlay.classList.add('hidden');
+    });
+
+    window.toggleUserStatus = function(uid, currentStatus) {
+      const newStatus = currentStatus === 'frozen' ? 'active' : 'frozen';
+      update(ref(db, 'admin/users/' + uid), { status: newStatus });
+    };
+
+    window.deleteUserRecord = function(uid) {
+      if(confirm('سيتم حذف سجل هذا المستخدم. هل أنت متأكد؟')) {
+        remove(ref(db, 'admin/users/' + uid));
+        remove(ref(db, 'users/' + uid + '/shipments'));
+      }
+    };
   }
 
   updateCostPreview();

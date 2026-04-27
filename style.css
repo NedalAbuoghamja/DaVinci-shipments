@@ -36,6 +36,7 @@ body {
   font-family: var(--font-family);
   min-height: 100vh;
   line-height: 1.6;
+  text-align: right;
 }
 
 .app-container {
@@ -155,6 +156,7 @@ body {
   border-radius: var(--border-radius-md);
   font-size: 1rem;
   transition: all 0.3s ease;
+  text-align: right;
 }
 
 .form-group input:focus, .form-group select:focus {
