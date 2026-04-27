@@ -51,23 +51,35 @@
   <!-- Admin Overlay -->
   <div id="adminOverlay" class="auth-overlay hidden">
     <div class="auth-modal glass-panel" style="max-width: 800px; width: 95%;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0;"><i class="fa-solid fa-user-shield"></i> الإدارة - المستخدمين</h2>
-        <button id="closeAdminBtn" style="background:var(--status-customs); color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;"><i class="fa-solid fa-times"></i></button>
+      <div id="adminUsersView">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0;"><i class="fa-solid fa-user-shield"></i> الإدارة - المستخدمين</h2>
+          <button id="closeAdminBtn" style="background:var(--status-customs); color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; text-align: right; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                <th style="padding: 10px;">المستخدم (الإيميل)</th>
+                <th style="padding: 10px;">التسجيل / الدخول</th>
+                <th style="padding: 10px;">الحالة</th>
+                <th style="padding: 10px;">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTable">
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div style="overflow-x: auto;">
-        <table style="width: 100%; text-align: right; border-collapse: collapse; margin-top: 10px;">
-          <thead>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
-              <th style="padding: 10px;">المستخدم (الإيميل)</th>
-              <th style="padding: 10px;">التسجيل / الدخول</th>
-              <th style="padding: 10px;">الحالة</th>
-              <th style="padding: 10px;">إجراءات</th>
-            </tr>
-          </thead>
-          <tbody id="adminUsersTable">
-          </tbody>
-        </table>
+
+      <div id="adminShipmentsView" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0;"><i class="fa-solid fa-box-open"></i> بضائع: <span id="adminViewingUserEmail"></span></h2>
+          <button id="backToUsersBtn" class="btn-primary" style="background:#3b82f6;"><i class="fa-solid fa-arrow-right"></i> رجوع للمستخدمين</button>
+        </div>
+        <div id="adminUserShipmentsContent" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px; max-height: 60vh; overflow-y: auto;">
+          <!-- Shipments injected here -->
+        </div>
       </div>
     </div>
   </div>
@@ -238,6 +250,6 @@
     </main>
   </div>
 
-  <script type="module" src="app.js?v=13"></script>
+  <script type="module" src="app.js?v=14"></script>
 </body>
 </html>

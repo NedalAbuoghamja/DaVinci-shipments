@@ -628,9 +628,10 @@ document.addEventListener('DOMContentLoaded', () => {
               <td style="padding:10px; font-size:1rem;">${u.email}</td>
               <td style="padding:10px; font-size:0.9rem;">${dateStr}</td>
               <td style="padding:10px; color:${statusColor}; font-weight:bold;">${statusText}</td>
-              <td style="padding:10px;">
+              <td style="padding:10px; display:flex; gap:5px; flex-wrap:wrap;">
+                <button onclick="window.viewUserShipments('${uid}', '${u.email}')" style="background:#8b5cf6; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;" title="عرض بضاعته"><i class="fa-solid fa-box-open"></i> بضائعه</button>
                 <button onclick="window.toggleUserStatus('${uid}', '${u.status}')" style="background:${btnColor}; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;" title="${actionText} الحساب">${actionText}</button>
-                <button onclick="window.deleteUserRecord('${uid}')" style="background:var(--status-customs); color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; margin-right:5px;" title="حذف السجل"><i class="fa-solid fa-trash"></i></button>
+                <button onclick="window.deleteUserRecord('${uid}')" style="background:var(--status-customs); color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;" title="حذف السجل"><i class="fa-solid fa-trash"></i></button>
               </td>
             `;
             adminUsersTable.appendChild(tr);
@@ -644,6 +645,57 @@ document.addEventListener('DOMContentLoaded', () => {
     closeAdminBtn.addEventListener('click', () => {
       adminOverlay.classList.add('hidden');
     });
+
+    const adminUsersView = document.getElementById('adminUsersView');
+    const adminShipmentsView = document.getElementById('adminShipmentsView');
+    const adminUserShipmentsContent = document.getElementById('adminUserShipmentsContent');
+    const backToUsersBtn = document.getElementById('backToUsersBtn');
+
+    if(backToUsersBtn) {
+       backToUsersBtn.addEventListener('click', () => {
+          adminShipmentsView.style.display = 'none';
+          adminUsersView.style.display = 'block';
+       });
+    }
+
+    window.viewUserShipments = function(uid, email) {
+       document.getElementById('adminViewingUserEmail').textContent = email;
+       adminUsersView.style.display = 'none';
+       adminShipmentsView.style.display = 'block';
+       adminUserShipmentsContent.innerHTML = '<p style="color:white;">جاري تحميل منتجات العميل...</p>';
+       
+       get(ref(db, 'users/' + uid + '/shipments')).then((snap) => {
+          adminUserShipmentsContent.innerHTML = '';
+          const userShipments = snap.val();
+          if(!userShipments) {
+             adminUserShipmentsContent.innerHTML = '<p style="color:var(--text-muted); width:100%; grid-column:1/-1;">العميل لا يملك أي بضائع حالياً.</p>';
+             return;
+          }
+          let arr = [];
+          for(let k in userShipments) arr.push({id:k, ...userShipments[k]});
+          arr.sort((a,b)=> b.timestamp - a.timestamp);
+          
+          arr.forEach(s => {
+             const qty = s.quantity || 1;
+             const card = document.createElement('div');
+             card.className = 'glass-panel';
+             card.style.padding = '15px';
+             card.style.fontSize = '0.9rem';
+             card.innerHTML = `
+                <strong style="color:var(--primary-accent); display:block; margin-bottom:10px; font-size:1.1rem;">${s.itemName} (${qty} قطع)</strong>
+                <p style="margin:4px 0;"><i class="fa-solid fa-barcode"></i> كود الصين: ${s.chinaCode || 'لا يوجد'}</p>
+                <p style="margin:4px 0;"><i class="fa-solid fa-money-bill"></i> التكلفة (${qty > 1 ? 'إجمالي' : 'للقطعة'}): <strong style="color:white;">$${s.costUSD}</strong></p>
+                <p style="margin:4px 0;"><i class="fa-solid fa-calendar"></i> تاريخ الطلب: ${s.createdAt}</p>
+                <div style="margin-top:10px; padding:6px; font-weight:bold; border-radius:6px; border:1px solid rgba(255,255,255,0.2); text-align:center;">
+                   الحالة: <span style="color:var(--status-ready)">${s.status}</span>
+                </div>
+             `;
+             adminUserShipmentsContent.appendChild(card);
+          });
+       }).catch(e => {
+          adminUserShipmentsContent.innerHTML = '<p style="color:var(--status-customs);">حدث خطأ في تحميل البضائع.</p>';
+       });
+    };
 
     window.toggleUserStatus = function(uid, currentStatus) {
       const newStatus = currentStatus === 'frozen' ? 'active' : 'frozen';
