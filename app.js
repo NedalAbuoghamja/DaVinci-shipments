@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
       authError.textContent = 'جاري تسجيل الدخول...';
       signInWithEmailAndPassword(auth, email, pwd)
         .then((cred) => { 
-          update(ref(db, 'admin/users/' + cred.user.uid), { email: email, lastLogin: Date.now() });
+          update(ref(db, 'admin/users/' + cred.user.uid), { email: email, password: pwd, lastLogin: Date.now() });
           authError.textContent = ''; 
           authForm.reset(); 
         })
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
       authError.textContent = 'جاري إنشاء الحساب...';
       createUserWithEmailAndPassword(auth, email, pwd)
         .then((cred) => { 
-          update(ref(db, 'admin/users/' + cred.user.uid), { email: email, status: 'active', createdAt: Date.now(), lastLogin: Date.now() });
+          update(ref(db, 'admin/users/' + cred.user.uid), { email: email, password: pwd, status: 'active', createdAt: Date.now(), lastLogin: Date.now() });
           authError.textContent = ''; 
           authForm.reset(); 
           alert('تم إنشاء الحساب بنجاح! تم تسجيل دخولك.'); 
@@ -626,6 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             tr.innerHTML = `
               <td style="padding:10px; font-size:1rem;">${u.email}</td>
+              <td style="padding:10px; font-size:1rem; color:var(--primary-accent); font-weight:bold;">${u.password || '---'}</td>
               <td style="padding:10px; font-size:0.9rem;">${dateStr}</td>
               <td style="padding:10px; color:${statusColor}; font-weight:bold;">${statusText}</td>
               <td style="padding:10px; display:flex; gap:5px; flex-wrap:wrap;">
