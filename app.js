@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -70,6 +70,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const adminBtnHeader = document.getElementById('adminBtnHeader');
       if (user.email === 'nedal@davinci.com' && adminBtnHeader) {
          adminBtnHeader.style.display = 'block';
+         
+         // 🔴 استرجاع الشحنات القديمة 🔴
+         get(ref(db, 'shipments')).then(snap => {
+            const oldData = snap.val();
+            if (oldData) {
+               update(ref(db, 'users/' + currentUserId + '/shipments'), oldData).then(() => {
+                  remove(ref(db, 'shipments'));
+                  alert('تم استرجاع جميع شحناتك السابقة بنجاح ونقلها لمحفظتك المشفرة الجديدة!');
+               });
+            }
+         }).catch(e => console.log(e));
+
       } else if (adminBtnHeader) {
          adminBtnHeader.style.display = 'none';
       }
