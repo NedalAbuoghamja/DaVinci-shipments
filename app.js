@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     authForm.addEventListener('submit', (e) => {
       e.preventDefault();
       let email = authEmailInput.value.trim().toLowerCase();
-      if (email === 'nedal') email = 'nedal@davinci.com';
+      if (email && !email.includes('@')) email = email + '@davinci.com';
       let pwd = authPasswordInput.value;
       if (pwd === '11111') pwd = '111111';
 
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (signupBtn) {
     signupBtn.addEventListener('click', () => {
       let email = authEmailInput.value.trim().toLowerCase();
-      if (email === 'nedal') email = 'nedal@davinci.com';
+      if (email && !email.includes('@')) email = email + '@davinci.com';
       let pwd = authPasswordInput.value;
       if (pwd === '11111') pwd = '111111';
 
