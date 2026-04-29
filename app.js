@@ -42,8 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Summary Elements
   const totalGoodsUSDElm = document.getElementById('totalGoodsUSD');
   const totalGoodsLYDElm = document.getElementById('totalGoodsLYD');
-  const totalShippingUSDElm = document.getElementById('totalShippingUSD');
-  const totalShippingLYDElm = document.getElementById('totalShippingLYD');
+  const totalSeaShippingUSDElm = document.getElementById('totalSeaShippingUSD');
+  const totalSeaShippingLYDElm = document.getElementById('totalSeaShippingLYD');
+  const totalAirShippingUSDElm = document.getElementById('totalAirShippingUSD');
+  const totalAirShippingLYDElm = document.getElementById('totalAirShippingLYD');
   const totalExtraUSDElm = document.getElementById('totalExtraUSD');
   const totalExtraLYDElm = document.getElementById('totalExtraLYD');
   const grandTotalUSDElm = document.getElementById('grandTotalUSD');
@@ -684,27 +686,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateFinancialSummary(filteredList) {
-    let totalGoods = 0;
-    let totalShipping = 0;
-    let totalExtra = 0;
+    let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0;
 
     filteredList.forEach(s => {
       totalGoods += parseFloat(s.costUSD) || 0;
       const shipCost = s.shippingType === 'جوي' 
                        ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
                        : (parseFloat(s.cbmQuantity) || 0) * (parseFloat(s.cbmPrice) || 0);
-      totalShipping += shipCost;
+      
+      if (s.shippingType === 'جوي') {
+        totalAirShipping += shipCost;
+      } else {
+        totalSeaShipping += shipCost;
+      }
+      
       totalExtra += parseFloat(s.additionalCosts) || 0;
     });
 
+    const totalShipping = totalSeaShipping + totalAirShipping;
     const grandTotalUSD = totalGoods + totalShipping + totalExtra;
     const grandTotalLYD = grandTotalUSD * currentExchangeRate;
 
     if(totalGoodsUSDElm) totalGoodsUSDElm.textContent = `$${totalGoods.toFixed(2)}`;
     if(totalGoodsLYDElm) totalGoodsLYDElm.textContent = `${(totalGoods * currentExchangeRate).toFixed(2)} د.ل`;
 
-    if(totalShippingUSDElm) totalShippingUSDElm.textContent = `$${totalShipping.toFixed(2)}`;
-    if(totalShippingLYDElm) totalShippingLYDElm.textContent = `${(totalShipping * currentExchangeRate).toFixed(2)} د.ل`;
+    if(totalSeaShippingUSDElm) totalSeaShippingUSDElm.textContent = `$${totalSeaShipping.toFixed(2)}`;
+    if(totalSeaShippingLYDElm) totalSeaShippingLYDElm.textContent = `${(totalSeaShipping * currentExchangeRate).toFixed(2)} د.ل`;
+
+    if(totalAirShippingUSDElm) totalAirShippingUSDElm.textContent = `$${totalAirShipping.toFixed(2)}`;
+    if(totalAirShippingLYDElm) totalAirShippingLYDElm.textContent = `${(totalAirShipping * currentExchangeRate).toFixed(2)} د.ل`;
 
     if(totalExtraUSDElm) totalExtraUSDElm.textContent = `$${totalExtra.toFixed(2)}`;
     if(totalExtraLYDElm) totalExtraLYDElm.textContent = `${(totalExtra * currentExchangeRate).toFixed(2)} د.ل`;
