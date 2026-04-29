@@ -52,6 +52,7 @@ body {
   font-family: var(--font-family);
   min-height: 100vh;
   line-height: 1.6;
+  text-align: right;
 }
 
 .app-container {
@@ -60,7 +61,6 @@ body {
   padding: 2rem;
 }
 
-/* Glassmorphism Utilities */
 .glass-panel {
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
@@ -70,7 +70,6 @@ body {
   border-radius: var(--border-radius-lg);
 }
 
-/* Header */
 .app-header {
   display: flex;
   justify-content: space-between;
@@ -97,7 +96,6 @@ body {
   font-size: 1.1rem;
 }
 
-/* Global Settings */
 .global-settings {
   padding: 1.2rem 1.8rem;
   display: flex;
@@ -130,7 +128,6 @@ body {
   outline: none;
 }
 
-/* Form Section */
 .add-shipment-section {
   padding: 2rem;
   margin-bottom: 3rem;
@@ -171,16 +168,13 @@ body {
   border-radius: var(--border-radius-md);
   font-size: 1rem;
   transition: all 0.3s ease;
+  text-align: right;
 }
 
 .form-group input:focus, .form-group select:focus {
   outline: none;
   border-color: var(--primary-accent);
   box-shadow: 0 0 10px var(--primary-accent-glow);
-}
-
-.file-upload-group input[type="file"] {
-  padding: 0.6rem;
 }
 
 .form-summary {
@@ -221,39 +215,12 @@ body {
   box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.6);
-}
-
-/* Shipments List */
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.section-header h2 {
-  font-size: 1.8rem;
-}
-
-.glass-badge {
-  background: rgba(0, 229, 255, 0.1);
-  border: 1px solid rgba(0, 229, 255, 0.2);
-  color: var(--primary-accent);
-  padding: 0.4rem 1rem;
-  border-radius: 20px;
-  font-weight: 700;
-}
-
 .shipments-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 2rem;
 }
 
-/* Shipment Card */
 .shipment-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -261,12 +228,6 @@ body {
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   position: relative;
-}
-
-.shipment-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.4);
-  border-color: rgba(255,255,255,0.15);
 }
 
 .card-image-holder {
@@ -283,17 +244,6 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.shipment-card:hover .card-image-holder img {
-  transform: scale(1.05);
-}
-
-.card-image-holder .no-image {
-  color: var(--text-muted);
-  font-size: 3rem;
-  opacity: 0.3;
 }
 
 .status-badge {
@@ -328,36 +278,14 @@ body {
   font-size: 0.95rem;
 }
 
-.card-details p {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.card-details p i {
-  color: var(--text-muted);
-  width: 20px;
-}
-
 .card-price {
   background: rgba(0,0,0,0.3);
   padding: 1rem;
   border-radius: var(--border-radius-md);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
   border-top: 1px solid var(--glass-border);
-}
-
-.card-price .usd {
-  color: var(--text-muted);
-  font-size: 0.95rem;
-}
-
-.card-price .lyd {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #10b981;
 }
 
 .delete-btn {
@@ -374,15 +302,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  z-index: 10;
 }
 
-.delete-btn:hover {
-  background: #ef4444;
-  transform: scale(1.1);
-}
-
-/* Animations */
 .fade-in {
   animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -397,13 +319,7 @@ body {
     flex-direction: column;
     align-items: flex-start;
   }
-  .form-summary {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
 }
-
 </style>
 </head>
 <body>
@@ -414,7 +330,7 @@ body {
         <p>إدارة وتتبع مشتريات الصين الخاصة بك</p>
       </div>
       <div class="global-settings glass-panel">
-        <label for="globalExchangeRate"><i class="fa-solid fa-money-bill-transfer"></i> سعر صرف الدولار مقابل الدينار:</label>
+        <label for="globalExchangeRate"><i class="fa-solid fa-money-bill-transfer"></i> سعر صرف الدولار:</label>
         <div class="input-group">
           <input type="number" id="globalExchangeRate" value="7.00" step="0.01">
           <span class="currency">د.ل</span>
@@ -423,58 +339,78 @@ body {
     </header>
 
     <main class="main-content">
-      <!-- Add New Shipment Section -->
       <section class="add-shipment-section glass-panel fade-in">
         <h2><i class="fa-solid fa-box-open"></i> تسجيل شحنة جديدة</h2>
         <form id="shipmentForm">
           <div class="form-grid">
             <div class="form-group">
-              <label for="itemName">اسم الشحنة / المنتج</label>
-              <input type="text" id="itemName" placeholder="مثال: شاشات هاتف, ملابس..." required>
+              <label for="itemName">اسم الشحنة</label>
+              <input type="text" id="itemName" placeholder="مثال: ملابس..." required>
             </div>
-            
             <div class="form-group">
-              <label for="chinaCode">كود الصين (رقم الطلبية)</label>
-              <input type="text" id="chinaCode" placeholder="رقم الطلب من المورد" required>
+              <label for="chinaCode">كود الصين</label>
+              <input type="text" id="chinaCode" required>
             </div>
-            
             <div class="form-group">
-              <label for="trackingCode">كود التتبع الدولي</label>
-              <input type="text" id="trackingCode" placeholder="رقم تتبع شركة الشحن">
-            </div>
-
-            <div class="form-group">
-              <label for="costUSD">التكلفة (بالدولار $)</label>
+              <label for="costUSD">تكلفة البضاعة ($)</label>
               <input type="number" id="costUSD" placeholder="0.00" step="0.01" required>
             </div>
+            <div class="form-group">
+              <label for="quantity">الكمية</label>
+              <input type="number" id="quantity" value="1" min="1">
+            </div>
+
+            <div id="seaShippingFields" class="form-grid" style="grid-column: 1 / -1; display: grid; margin-bottom: 0;">
+              <div class="form-group">
+                <label for="cbmQuantity">حجم الشحنة (CBM)</label>
+                <input type="number" id="cbmQuantity" step="0.01" value="0.01">
+              </div>
+              <div class="form-group">
+                <label for="cbmPrice">سعر المتر ($)</label>
+                <input type="number" id="cbmPrice" step="0.01" value="175">
+              </div>
+            </div>
+
+            <div id="airShippingFields" class="form-grid" style="grid-column: 1 / -1; display: none; margin-bottom: 0;">
+              <div class="form-group">
+                <label for="weightKG">الوزن (KG)</label>
+                <input type="number" id="weightKG" step="0.01" value="0">
+              </div>
+              <div class="form-group">
+                <label for="kgPrice">سعر الكيلو ($)</label>
+                <input type="number" id="kgPrice" step="0.01" value="10">
+              </div>
+            </div>
 
             <div class="form-group">
-              <label for="status">حالة الشحنة (تتبع)</label>
-              <select id="status" required>
+              <label for="additionalCosts">تكاليف إضافية ($)</label>
+              <input type="number" id="additionalCosts" step="0.01" value="0">
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label>نوع الشحن</label>
+              <div style="display: flex; gap: 10px;">
+                <label style="flex: 1; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.1);">
+                  <input type="radio" name="shippingType" value="جوي"> <i class="fa-solid fa-plane"></i> جوي
+                </label>
+                <label style="flex: 1; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.1);">
+                  <input type="radio" name="shippingType" value="بحري" checked> <i class="fa-solid fa-ship"></i> بحري
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="status">حالة الشحنة</label>
+              <select id="status">
                 <option value="تم الطلب وفي انتظار التجهيز">تم الطلب وفي انتظار التجهيز</option>
                 <option value="في طريقها لمخزن الصين">في طريقها لمخزن الصين</option>
-                <option value="في الشحن الدولي">في الشحن الدولي (في البحر/الجو)</option>
+                <option value="في الشحن الدولي">في الشحن الدولي</option>
                 <option value="في ميناء الوصول (الجمارك)">في ميناء الوصول (الجمارك)</option>
                 <option value="جاهزة للتسليم محلياً">جاهزة للتسليم محلياً</option>
                 <option value="تم الاستلام">تم الاستلام ✅</option>
               </select>
             </div>
-
-            <div class="form-group">
-              <label for="dateChina">تاريخ الوصول لمخزن الصين</label>
-              <input type="date" id="dateChina" class="date-input">
-            </div>
-
-            <div class="form-group">
-              <label for="dateDeparture">تاريخ الخروج من الصين</label>
-              <input type="date" id="dateDeparture" class="date-input">
-            </div>
-
-            <div class="form-group">
-              <label for="dateLibya">تاريخ الوصول لليبيا</label>
-              <input type="date" id="dateLibya" class="date-input">
-            </div>
-
+            
             <div class="form-group file-upload-group">
               <label for="itemImage">إرفاق صورة <i class="fa-solid fa-cloud-arrow-up"></i></label>
               <input type="file" id="itemImage" accept="image/*">
@@ -483,26 +419,46 @@ body {
           
           <div class="form-summary">
             <div class="cost-preview">
-              <span>التكلفة المتوقعة بالدينار:</span>
+              <span>التكلفة المتوقعة:</span>
               <span id="costPreviewLYD" class="highlight">0.00 د.ل</span>
             </div>
-            <button type="submit" class="btn-primary">
-              <i class="fa-solid fa-plus"></i> إضافة الشحنة
-            </button>
+            <button type="submit" class="btn-primary">إضافة الشحنة</button>
           </div>
         </form>
       </section>
 
-      <!-- Shipments List Section -->
+      <section id="financialSummarySection" class="glass-panel fade-in" style="margin-bottom: 3rem; padding: 2rem;">
+        <h2 style="margin-bottom: 20px; font-size: 1.5rem;"><i class="fa-solid fa-chart-pie"></i> ملخص التكاليف المالية</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+          <div class="glass-panel" style="padding: 15px; text-align: center;">
+            <p style="color: var(--text-muted); font-size: 0.8rem;">البضاعة ($)</p>
+            <h3 id="totalGoodsUSD" style="color: var(--primary-accent);">$0.00</h3>
+          </div>
+          <div class="glass-panel" style="padding: 15px; text-align: center;">
+            <p style="color: var(--text-muted); font-size: 0.8rem;">الشحن ($)</p>
+            <h3 id="totalShippingUSD" style="color: var(--status-pending);">$0.00</h3>
+          </div>
+          <div class="glass-panel" style="padding: 15px; text-align: center;">
+            <p style="color: var(--text-muted); font-size: 0.8rem;">إضافي ($)</p>
+            <h3 id="totalExtraUSD" style="color: var(--status-customs);">$0.00</h3>
+          </div>
+          <div class="glass-panel" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.1);">
+            <p style="font-weight: bold; font-size: 0.8rem;">الإجمالي ($)</p>
+            <h3 id="grandTotalUSD" style="color: var(--status-ready);">$0.00</h3>
+          </div>
+          <div class="glass-panel" style="padding: 15px; text-align: center; background: rgba(0, 229, 255, 0.1);">
+            <p style="font-weight: bold; font-size: 0.8rem;">المجموع بالدينار</p>
+            <h3 id="grandTotalLYD" style="color: var(--primary-accent);">0.00 د.ل</h3>
+          </div>
+        </div>
+      </section>
+
       <section class="shipments-list-section">
         <div class="section-header">
           <h2><i class="fa-solid fa-cubes"></i> شحناتي الحالية</h2>
-          <div class="stats glass-badge">إجمالي شحناتك: <span id="totalShipmentsCount">0</span></div>
+          <div class="stats glass-badge">العدد: <span id="totalShipmentsCount">0</span></div>
         </div>
-        
-        <div class="shipments-grid" id="shipmentsContainer">
-          <!-- Cards will be injected by JavaScript -->
-        </div>
+        <div class="shipments-grid" id="shipmentsContainer"></div>
       </section>
     </main>
   </div>
@@ -521,7 +477,6 @@ const firebaseConfig = {
   appId: "1:621430667796:web:dbb234b99fd4a90da04501"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const shipmentsRef = ref(db, 'shipments');
@@ -535,163 +490,127 @@ document.addEventListener('DOMContentLoaded', () => {
   const costUSDInput = document.getElementById('costUSD');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
   const shipmentsContainer = document.getElementById('shipmentsContainer');
-  const totalShipmentsCount = document.getElementById('totalShipmentsCount');
+  const seaShippingFields = document.getElementById('seaShippingFields');
+  const airShippingFields = document.getElementById('airShippingFields');
 
-  // Load user's preferred exchange rate from LocalStorage
-  currentExchangeRate = parseFloat(localStorage.getItem('exchangeRate')) || 7.00;
-  globalExchangeRateInput.value = currentExchangeRate;
-
-  // Real-time Sync from Firebase
   onValue(shipmentsRef, (snapshot) => {
     const data = snapshot.val();
     shipments = [];
     if (data) {
-      for (let key in data) {
-        shipments.push({ id: key, ...data[key] });
-      }
+      for (let key in data) shipments.push({ id: key, ...data[key] });
     }
-    // Render shipments
     renderShipments();
   });
 
-  // Calculate LYD automatically when USD typed
-  costUSDInput.addEventListener('input', updateCostPreview);
-
-  // Update Exchange Rate globally
-  globalExchangeRateInput.addEventListener('input', (e) => {
-    currentExchangeRate = parseFloat(e.target.value) || 0;
-    localStorage.setItem('exchangeRate', currentExchangeRate); // Save preference
+  const updateAll = () => {
     updateCostPreview();
-    renderShipments(); // Update all cards
+    renderShipments();
+  };
+
+  form.addEventListener('input', updateCostPreview);
+
+  document.querySelectorAll('input[name="shippingType"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.value === 'جوي') {
+        seaShippingFields.style.display = 'none';
+        airShippingFields.style.display = 'grid';
+      } else {
+        seaShippingFields.style.display = 'grid';
+        airShippingFields.style.display = 'none';
+      }
+      updateCostPreview();
+    });
   });
 
-  // Add new shipment via Form
+  globalExchangeRateInput.addEventListener('input', (e) => {
+    currentExchangeRate = parseFloat(e.target.value) || 0;
+    updateAll();
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    const itemName = document.getElementById('itemName').value;
-    const chinaCode = document.getElementById('chinaCode').value;
-    const trackingCode = document.getElementById('trackingCode').value;
-    const costUSD = parseFloat(costUSDInput.value);
-    const status = document.getElementById('status').value;
-    
-    // Dates
-    const dateChina = document.getElementById('dateChina').value;
-    const dateDeparture = document.getElementById('dateDeparture').value;
-    const dateLibya = document.getElementById('dateLibya').value;
-
     const imageInput = document.getElementById('itemImage');
-
     let imageBase64 = null;
-    if (imageInput.files && imageInput.files[0]) {
-      imageBase64 = await toBase64(imageInput.files[0]);
-    }
+    if (imageInput.files && imageInput.files[0]) imageBase64 = await toBase64(imageInput.files[0]);
 
     const newShipment = {
-      itemName,
-      chinaCode,
-      trackingCode: trackingCode || 'لم يتم الإصدار بعد',
-      costUSD,
-      status,
-      dateChina,
-      dateDeparture,
-      dateLibya,
+      itemName: document.getElementById('itemName').value,
+      chinaCode: document.getElementById('chinaCode').value,
+      costUSD: parseFloat(costUSDInput.value),
+      quantity: parseInt(document.getElementById('quantity').value) || 1,
+      cbmQuantity: parseFloat(document.getElementById('cbmQuantity').value) || 0,
+      cbmPrice: parseFloat(document.getElementById('cbmPrice').value) || 0,
+      weightKG: parseFloat(document.getElementById('weightKG').value) || 0,
+      kgPrice: parseFloat(document.getElementById('kgPrice').value) || 0,
+      additionalCosts: parseFloat(document.getElementById('additionalCosts').value) || 0,
+      shippingType: document.querySelector('input[name="shippingType"]:checked').value,
+      status: document.getElementById('status').value,
       image: imageBase64,
       createdAt: new Date().toLocaleDateString('ar-LY'),
-      timestamp: Date.now() // For sorting
+      timestamp: Date.now()
     };
-
-    // Push DIRECTLY to Firebase Cloud ☁️
     push(shipmentsRef, newShipment);
-    
     form.reset();
     updateCostPreview();
   });
 
-  // Image to text (base64) converter
-  function toBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = error => reject(error);
-    });
-  }
-
-  // Update LYD label directly
   function updateCostPreview() {
     const usd = parseFloat(costUSDInput.value) || 0;
-    const lyd = (usd * currentExchangeRate).toFixed(2);
-    costPreviewLYD.textContent = `${lyd} د.ل`;
+    const shipType = document.querySelector('input[name="shippingType"]:checked').value;
+    let shipUsd = 0;
+    if (shipType === 'جوي') {
+      shipUsd = (parseFloat(document.getElementById('weightKG').value) || 0) * (parseFloat(document.getElementById('kgPrice').value) || 0);
+    } else {
+      shipUsd = (parseFloat(document.getElementById('cbmQuantity').value) || 0) * (parseFloat(document.getElementById('cbmPrice').value) || 0);
+    }
+    const extra = parseFloat(document.getElementById('additionalCosts').value) || 0;
+    const total = usd + shipUsd + extra;
+    costPreviewLYD.textContent = `${(total * currentExchangeRate).toFixed(2)} د.ل`;
   }
 
-  // Global delete function
-  window.deleteShipment = function(id) {
-    if(confirm('هل أنت متأكد من حذف هذه الشحنة نهائياً من جميع الأجهزة؟')) {
-      const itemRef = ref(db, 'shipments/' + id);
-      remove(itemRef); // Removes from Firebase Cloud ☁️
-    }
-  };
-
-  // Render HTML based on Firebase Data
   function renderShipments() {
     shipmentsContainer.innerHTML = '';
-    totalShipmentsCount.textContent = shipments.length;
+    document.getElementById('totalShipmentsCount').textContent = shipments.length;
+    let tg = 0, ts = 0, te = 0;
 
-    if (shipments.length === 0) {
-      shipmentsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">لا توجد شحنات مسجلة في التخزين السحابي...</p>';
-      return;
-    }
-
-    // Sort newest first
-    shipments.sort((a,b) => b.timestamp - a.timestamp).forEach(shipment => {
-      const lydCost = (shipment.costUSD * currentExchangeRate).toFixed(2);
-      
-      let statusColor = 'var(--status-transit)';
-      if (shipment.status.includes('تم الطلب')) statusColor = 'var(--status-pending)';
-      if (shipment.status.includes('الجمارك')) statusColor = 'var(--status-customs)';
-      if (shipment.status.includes('جاهزة') || shipment.status.includes('الاستلام')) statusColor = 'var(--status-ready)';
+    shipments.sort((a,b) => b.timestamp - a.timestamp).forEach(s => {
+      const shipCost = s.shippingType === 'جوي' ? (s.weightKG * s.kgPrice) : (s.cbmQuantity * s.cbmPrice);
+      const total = s.costUSD + shipCost + (s.additionalCosts || 0);
+      tg += s.costUSD; ts += shipCost; te += (s.additionalCosts || 0);
 
       const card = document.createElement('div');
       card.className = 'shipment-card fade-in';
       card.innerHTML = `
-        <button class="delete-btn" onclick="deleteShipment('${shipment.id}')" title="حذف الشحنة من السحابة">
-          <i class="fa-solid fa-trash"></i>
-        </button>
+        <button class="delete-btn" onclick="deleteShipment('${s.id}')"><i class="fa-solid fa-trash"></i></button>
         <div class="card-image-holder">
-          <div class="status-badge" style="color: ${statusColor}; border-color: ${statusColor}">
-            ${shipment.status}
-          </div>
-          ${shipment.image 
-            ? `<img src="${shipment.image}" alt="${shipment.itemName}">` 
-            : `<i class="fa-solid fa-box no-image"></i>`}
+          <div class="status-badge">${s.status}</div>
+          ${s.image ? `<img src="${s.image}">` : `<i class="fa-solid fa-box" style="font-size:3rem; opacity:0.2;"></i>`}
         </div>
         <div class="card-content">
-          <h3 class="card-title">${shipment.itemName}</h3>
-          
+          <h3 class="card-title">${s.itemName}</h3>
           <div class="card-details">
-            <p><i class="fa-solid fa-barcode"></i> كود الصين: <strong>${shipment.chinaCode}</strong></p>
-            <p><i class="fa-solid fa-truck-fast"></i> رقم التتبع: <strong>${shipment.trackingCode}</strong></p>
-            <p><i class="fa-solid fa-calendar-plus"></i> تاريخ الإضافة: <strong>${shipment.createdAt}</strong></p>
-            ${shipment.dateChina ? `<p><i class="fa-solid fa-building-flag"></i> وصل مخزن الصين: <strong style="color:var(--status-pending)">${shipment.dateChina}</strong></p>` : ''}
-            ${shipment.dateDeparture ? `<p><i class="fa-solid fa-plane-departure"></i> غادر الصين: <strong style="color:var(--status-transit)">${shipment.dateDeparture}</strong></p>` : ''}
-            ${shipment.dateLibya ? `<p><i class="fa-solid fa-location-dot"></i> وصل ليبيا: <strong style="color:var(--status-ready)">${shipment.dateLibya}</strong></p>` : ''}
+            <p>كود: ${s.chinaCode}</p>
+            <p>الشحن: ${s.shippingType} (${s.shippingType === 'جوي' ? s.weightKG + ' KG' : s.cbmQuantity + ' CBM'})</p>
+            <p>إضافي: $${s.additionalCosts || 0}</p>
           </div>
-
           <div class="card-price">
-            <div class="usd">التكلفة: ${shipment.costUSD.toFixed(2)}</div>
-            <div class="lyd">${lydCost} د.ل</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">إجمالي: $${total.toFixed(2)}</div>
+            <div style="font-size:1.3rem; font-weight:800; color:#10b981;">${(total * currentExchangeRate).toFixed(2)} د.ل</div>
           </div>
-        </div>
-      `;
+        </div>`;
       shipmentsContainer.appendChild(card);
     });
+
+    document.getElementById('totalGoodsUSD').textContent = `$${tg.toFixed(2)}`;
+    document.getElementById('totalShippingUSD').textContent = `$${ts.toFixed(2)}`;
+    document.getElementById('totalExtraUSD').textContent = `$${te.toFixed(2)}`;
+    document.getElementById('grandTotalUSD').textContent = `$${(tg+ts+te).toFixed(2)}`;
+    document.getElementById('grandTotalLYD').textContent = `${((tg+ts+te) * currentExchangeRate).toFixed(2)} د.ل`;
   }
 
-  updateCostPreview();
+  window.deleteShipment = (id) => { if(confirm('حذف؟')) remove(ref(db, 'shipments/' + id)); };
+  function toBase64(f) { return new Promise(r => { const rd = new FileReader(); rd.readAsDataURL(f); rd.onload = () => r(rd.result); }); }
 });
-
 </script>
 </body>
 </html>
-
