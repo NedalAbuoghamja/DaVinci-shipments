@@ -41,8 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Summary Elements
   const totalGoodsUSDElm = document.getElementById('totalGoodsUSD');
+  const totalGoodsLYDElm = document.getElementById('totalGoodsLYD');
   const totalShippingUSDElm = document.getElementById('totalShippingUSD');
+  const totalShippingLYDElm = document.getElementById('totalShippingLYD');
   const totalExtraUSDElm = document.getElementById('totalExtraUSD');
+  const totalExtraLYDElm = document.getElementById('totalExtraLYD');
   const grandTotalUSDElm = document.getElementById('grandTotalUSD');
   const grandTotalLYDElm = document.getElementById('grandTotalLYD');
   
@@ -698,8 +701,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const grandTotalLYD = grandTotalUSD * currentExchangeRate;
 
     if(totalGoodsUSDElm) totalGoodsUSDElm.textContent = `$${totalGoods.toFixed(2)}`;
+    if(totalGoodsLYDElm) totalGoodsLYDElm.textContent = `${(totalGoods * currentExchangeRate).toFixed(2)} د.ل`;
+
     if(totalShippingUSDElm) totalShippingUSDElm.textContent = `$${totalShipping.toFixed(2)}`;
+    if(totalShippingLYDElm) totalShippingLYDElm.textContent = `${(totalShipping * currentExchangeRate).toFixed(2)} د.ل`;
+
     if(totalExtraUSDElm) totalExtraUSDElm.textContent = `$${totalExtra.toFixed(2)}`;
+    if(totalExtraLYDElm) totalExtraLYDElm.textContent = `${(totalExtra * currentExchangeRate).toFixed(2)} د.ل`;
+
     if(grandTotalUSDElm) grandTotalUSDElm.textContent = `$${grandTotalUSD.toFixed(2)}`;
     if(grandTotalLYDElm) grandTotalLYDElm.textContent = `${grandTotalLYD.toFixed(2)} د.ل`;
   }

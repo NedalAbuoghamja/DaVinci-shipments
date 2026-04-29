@@ -243,28 +243,27 @@
         </form>
       </section>
 
-      <!-- Financial Summary Section -->
       <section id="financialSummarySection" class="glass-panel fade-in" style="margin-bottom: 3rem; padding: 2rem;">
         <h2 style="margin-bottom: 20px; font-size: 1.5rem;"><i class="fa-solid fa-chart-pie"></i> ملخص التكاليف المالية (للشحنات المعروضة)</h2>
-        <div class="summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div class="summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px;">
           <div class="summary-item glass-panel" style="padding: 15px; text-align: center;">
-            <p style="color: var(--text-muted); font-size: 0.9rem;">إجمالي البضاعة ($)</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">إجمالي البضاعة</p>
             <h3 id="totalGoodsUSD" style="color: var(--primary-accent); font-size: 1.4rem;">$0.00</h3>
+            <p id="totalGoodsLYD" style="color: var(--text-muted); font-size: 0.85rem;">0.00 د.ل</p>
           </div>
           <div class="summary-item glass-panel" style="padding: 15px; text-align: center;">
-            <p style="color: var(--text-muted); font-size: 0.9rem;">إجمالي الشحن ($)</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">إجمالي الشحن</p>
             <h3 id="totalShippingUSD" style="color: var(--status-pending); font-size: 1.4rem;">$0.00</h3>
+            <p id="totalShippingLYD" style="color: var(--text-muted); font-size: 0.85rem;">0.00 د.ل</p>
           </div>
           <div class="summary-item glass-panel" style="padding: 15px; text-align: center;">
-            <p style="color: var(--text-muted); font-size: 0.9rem;">تكاليف إضافية ($)</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">تكاليف إضافية</p>
             <h3 id="totalExtraUSD" style="color: var(--status-customs); font-size: 1.4rem;">$0.00</h3>
+            <p id="totalExtraLYD" style="color: var(--text-muted); font-size: 0.85rem;">0.00 د.ل</p>
           </div>
-          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.1);">
-            <p style="color: var(--text-main); font-size: 0.9rem; font-weight: bold;">المجموع الكلي ($)</p>
-            <h3 id="grandTotalUSD" style="color: var(--status-ready); font-size: 1.6rem; font-weight: 800;">$0.00</h3>
-          </div>
-          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; background: rgba(0, 229, 255, 0.1); grid-column: span 1;">
-            <p style="color: var(--text-main); font-size: 0.9rem; font-weight: bold;">المجموع بالدينار</p>
+          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.1); border: 2px solid var(--status-ready);">
+            <p style="color: var(--text-main); font-size: 1rem; font-weight: bold;">المجموع الكلي</p>
+            <h3 id="grandTotalUSD" style="color: var(--status-ready); font-size: 1.8rem; font-weight: 800;">$0.00</h3>
             <h3 id="grandTotalLYD" style="color: var(--primary-accent); font-size: 1.8rem; font-weight: 900;">0.00 د.ل</h3>
           </div>
         </div>

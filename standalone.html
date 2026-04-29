@@ -429,26 +429,26 @@ body {
 
       <section id="financialSummarySection" class="glass-panel fade-in" style="margin-bottom: 3rem; padding: 2rem;">
         <h2 style="margin-bottom: 20px; font-size: 1.5rem;"><i class="fa-solid fa-chart-pie"></i> ملخص التكاليف المالية</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
           <div class="glass-panel" style="padding: 15px; text-align: center;">
-            <p style="color: var(--text-muted); font-size: 0.8rem;">البضاعة ($)</p>
+            <p style="color: var(--text-muted); font-size: 0.8rem;">إجمالي البضاعة</p>
             <h3 id="totalGoodsUSD" style="color: var(--primary-accent);">$0.00</h3>
+            <p id="totalGoodsLYD" style="color: var(--text-muted); font-size: 0.75rem;">0.00 د.ل</p>
           </div>
           <div class="glass-panel" style="padding: 15px; text-align: center;">
-            <p style="color: var(--text-muted); font-size: 0.8rem;">الشحن ($)</p>
+            <p style="color: var(--text-muted); font-size: 0.8rem;">إجمالي الشحن</p>
             <h3 id="totalShippingUSD" style="color: var(--status-pending);">$0.00</h3>
+            <p id="totalShippingLYD" style="color: var(--text-muted); font-size: 0.75rem;">0.00 د.ل</p>
           </div>
           <div class="glass-panel" style="padding: 15px; text-align: center;">
-            <p style="color: var(--text-muted); font-size: 0.8rem;">إضافي ($)</p>
+            <p style="color: var(--text-muted); font-size: 0.8rem;">تكاليف إضافية</p>
             <h3 id="totalExtraUSD" style="color: var(--status-customs);">$0.00</h3>
+            <p id="totalExtraLYD" style="color: var(--text-muted); font-size: 0.75rem;">0.00 د.ل</p>
           </div>
-          <div class="glass-panel" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.1);">
-            <p style="font-weight: bold; font-size: 0.8rem;">الإجمالي ($)</p>
-            <h3 id="grandTotalUSD" style="color: var(--status-ready);">$0.00</h3>
-          </div>
-          <div class="glass-panel" style="padding: 15px; text-align: center; background: rgba(0, 229, 255, 0.1);">
-            <p style="font-weight: bold; font-size: 0.8rem;">المجموع بالدينار</p>
-            <h3 id="grandTotalLYD" style="color: var(--primary-accent);">0.00 د.ل</h3>
+          <div class="glass-panel" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.1); border: 2px solid var(--status-ready);">
+            <p style="font-weight: bold; font-size: 0.9rem;">المجموع الكلي</p>
+            <h3 id="grandTotalUSD" style="color: var(--status-ready); font-size: 1.5rem;">$0.00</h3>
+            <h3 id="grandTotalLYD" style="color: var(--primary-accent); font-size: 1.5rem;">0.00 د.ل</h3>
           </div>
         </div>
       </section>
@@ -602,8 +602,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('totalGoodsUSD').textContent = `$${tg.toFixed(2)}`;
+    document.getElementById('totalGoodsLYD').textContent = `${(tg * currentExchangeRate).toFixed(2)} د.ل`;
+    
     document.getElementById('totalShippingUSD').textContent = `$${ts.toFixed(2)}`;
+    document.getElementById('totalShippingLYD').textContent = `${(ts * currentExchangeRate).toFixed(2)} د.ل`;
+    
     document.getElementById('totalExtraUSD').textContent = `$${te.toFixed(2)}`;
+    document.getElementById('totalExtraLYD').textContent = `${(te * currentExchangeRate).toFixed(2)} د.ل`;
+    
     document.getElementById('grandTotalUSD').textContent = `$${(tg+ts+te).toFixed(2)}`;
     document.getElementById('grandTotalLYD').textContent = `${((tg+ts+te) * currentExchangeRate).toFixed(2)} د.ل`;
   }
