@@ -137,14 +137,26 @@
                   <input type="number" id="costUSD" placeholder="0.00" step="0.01" required>
                 </div>
 
-                <div class="form-group">
-                  <label for="cbmQuantity">حجم الشحنة (CBM)</label>
-                  <input type="number" id="cbmQuantity" placeholder="مثال: 0.01" step="0.01" value="0.01">
+                <div id="seaShippingFields" class="form-grid" style="grid-column: 1 / -1; display: grid; margin-bottom: 0;">
+                  <div class="form-group">
+                    <label for="cbmQuantity">حجم الشحنة (CBM)</label>
+                    <input type="number" id="cbmQuantity" placeholder="مثال: 0.01" step="0.01" value="0.01">
+                  </div>
+                  <div class="form-group">
+                    <label for="cbmPrice">سعر الـ CBM الواحد ($)</label>
+                    <input type="number" id="cbmPrice" placeholder="تكلفة شحن المتر" step="0.01" value="175">
+                  </div>
                 </div>
 
-                <div class="form-group">
-                  <label for="cbmPrice">سعر الـ CBM الواحد ($)</label>
-                  <input type="number" id="cbmPrice" placeholder="تكلفة شحن المتر" step="0.01" value="175">
+                <div id="airShippingFields" class="form-grid" style="grid-column: 1 / -1; display: none; margin-bottom: 0;">
+                  <div class="form-group">
+                    <label for="weightKG">وزن الشحنة (KG)</label>
+                    <input type="number" id="weightKG" placeholder="مثال: 5.5" step="0.01" value="0">
+                  </div>
+                  <div class="form-group">
+                    <label for="kgPrice">سعر الكيلو الواحد ($)</label>
+                    <input type="number" id="kgPrice" placeholder="تكلفة الكيلو" step="0.01" value="10">
+                  </div>
                 </div>
 
                 <div class="form-group">

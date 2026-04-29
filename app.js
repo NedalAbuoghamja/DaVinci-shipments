@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const quantityInput = document.getElementById('quantity');
   const cbmQuantityInput = document.getElementById('cbmQuantity');
   const cbmPriceInput = document.getElementById('cbmPrice');
+  const weightKGInput = document.getElementById('weightKG');
+  const kgPriceInput = document.getElementById('kgPrice');
+  const seaShippingFields = document.getElementById('seaShippingFields');
+  const airShippingFields = document.getElementById('airShippingFields');
   const additionalCostsInput = document.getElementById('additionalCosts');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
   const shipmentsContainer = document.getElementById('shipmentsContainer');
@@ -176,7 +180,24 @@ document.addEventListener('DOMContentLoaded', () => {
   if(quantityInput) quantityInput.addEventListener('input', updateCostPreview);
   if(cbmQuantityInput) cbmQuantityInput.addEventListener('input', updateCostPreview);
   if(cbmPriceInput) cbmPriceInput.addEventListener('input', updateCostPreview);
+  if(weightKGInput) weightKGInput.addEventListener('input', updateCostPreview);
+  if(kgPriceInput) kgPriceInput.addEventListener('input', updateCostPreview);
   if(additionalCostsInput) additionalCostsInput.addEventListener('input', updateCostPreview);
+
+  // Toggle Shipping Fields
+  const shippingTypeRadios = document.querySelectorAll('input[name="shippingType"]');
+  shippingTypeRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.value === 'جوي') {
+        seaShippingFields.style.display = 'none';
+        airShippingFields.style.display = 'grid';
+      } else {
+        seaShippingFields.style.display = 'grid';
+        airShippingFields.style.display = 'none';
+      }
+      updateCostPreview();
+    });
+  });
 
   // Search and filter listeners
   if(searchInput) searchInput.addEventListener('input', renderShipments);
@@ -200,6 +221,8 @@ document.addEventListener('DOMContentLoaded', () => {
       costUSD: document.getElementById('costUSD').value,
       cbmQuantity: document.getElementById('cbmQuantity').value,
       cbmPrice: document.getElementById('cbmPrice').value,
+      weightKG: document.getElementById('weightKG').value,
+      kgPrice: document.getElementById('kgPrice').value,
       additionalCosts: document.getElementById('additionalCosts').value,
       shippingType: document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري',
       status: document.getElementById('status').value,
@@ -224,10 +247,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if(d.costUSD) document.getElementById('costUSD').value = d.costUSD;
       if(d.cbmQuantity) document.getElementById('cbmQuantity').value = d.cbmQuantity;
       if(d.cbmPrice) document.getElementById('cbmPrice').value = d.cbmPrice;
+      if(d.weightKG) document.getElementById('weightKG').value = d.weightKG;
+      if(d.kgPrice) document.getElementById('kgPrice').value = d.kgPrice;
       if(d.additionalCosts) document.getElementById('additionalCosts').value = d.additionalCosts;
       if(d.shippingType) {
         const radio = document.querySelector(`input[name="shippingType"][value="${d.shippingType}"]`);
-        if(radio) radio.checked = true;
+        if(radio) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event('change'));
+        }
       }
       if(d.status) document.getElementById('status').value = d.status;
       if(d.dateChina) document.getElementById('dateChina').value = d.dateChina;
@@ -263,6 +291,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const quantity = parseInt(quantityInput.value) || 1;
     const cbmQuantity = parseFloat(cbmQuantityInput.value) || 0;
     const cbmPrice = parseFloat(cbmPriceInput.value) || 0;
+    const weightKG = parseFloat(weightKGInput.value) || 0;
+    const kgPrice = parseFloat(kgPriceInput.value) || 0;
     const additionalCosts = parseFloat(additionalCostsInput.value) || 0;
     const shippingType = document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري';
 
@@ -287,6 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
       quantity,
       cbmQuantity,
       cbmPrice,
+      weightKG,
+      kgPrice,
       additionalCosts,
       shippingType,
       image: imageBase64,
@@ -333,10 +365,15 @@ document.addEventListener('DOMContentLoaded', () => {
       setVal('quantity', shipment.quantity || 1);
       setVal('cbmQuantity', shipment.cbmQuantity || '');
       setVal('cbmPrice', shipment.cbmPrice || '');
+      setVal('weightKG', shipment.weightKG || '');
+      setVal('kgPrice', shipment.kgPrice || '');
       setVal('additionalCosts', shipment.additionalCosts || '');
       if(shipment.shippingType) {
         const radio = document.querySelector(`input[name="shippingType"][value="${shipment.shippingType}"]`);
-        if(radio) radio.checked = true;
+        if(radio) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event('change'));
+        }
       }
       setVal('status', shipment.status || '');
       setVal('dateChina', shipment.dateChina || '');
@@ -387,10 +424,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Update LYD label directly
   function updateCostPreview() {
     const usd = parseFloat(costUSDInput.value) || 0;
-    const cbmQ = cbmQuantityInput ? (parseFloat(cbmQuantityInput.value) || 0) : 0;
-    const cbmP = cbmPriceInput ? (parseFloat(cbmPriceInput.value) || 0) : 0;
+    const shipType = document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري';
+    let shippingUsd = 0;
+    
+    if (shipType === 'جوي') {
+      const kg = parseFloat(weightKGInput.value) || 0;
+      const kgP = parseFloat(kgPriceInput.value) || 0;
+      shippingUsd = kg * kgP;
+    } else {
+      const cbmQ = cbmQuantityInput ? (parseFloat(cbmQuantityInput.value) || 0) : 0;
+      const cbmP = cbmPriceInput ? (parseFloat(cbmPriceInput.value) || 0) : 0;
+      shippingUsd = cbmQ * cbmP;
+    }
+
     const addCosts = additionalCostsInput ? (parseFloat(additionalCostsInput.value) || 0) : 0;
-    const shippingUsd = cbmQ * cbmP;
     
     // total is goods + shipping + additional
     const totalUsd = usd + shippingUsd + addCosts;
@@ -549,8 +596,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const qty = shipment.quantity || 1;
       const cbm = shipment.cbmQuantity || 0;
       const cbmp = shipment.cbmPrice || 0;
-      const totalShippingUsd = cbm * cbmp;
-      const totalCostUsd = shipment.costUSD + totalShippingUsd;
+      const totalShippingUsd = shipment.shippingType === 'جوي' 
+                               ? (parseFloat(shipment.weightKG) || 0) * (parseFloat(shipment.kgPrice) || 0)
+                               : (parseFloat(shipment.cbmQuantity) || 0) * (parseFloat(shipment.cbmPrice) || 0);
+
+      const totalCostUsd = shipment.costUSD + totalShippingUsd + (parseFloat(shipment.additionalCosts) || 0);
       const unitCostUsd = shipment.costUSD / qty;
       const unitCostWithShippingUsd = totalCostUsd / qty;
 
@@ -593,7 +643,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <p><i class="fa-solid fa-barcode"></i> كود الصين: <strong>${shipment.chinaCode}</strong></p>
             <p><i class="fa-solid fa-truck-fast"></i> رقم التتبع: <strong>${shipment.trackingCode}</strong></p>
             <p><i class="fa-solid fa-boxes-stacked"></i> الكمية: <strong style="color:var(--primary-accent)">${qty} قطع/كراتين</strong></p>
-            ${(cbm > 0) ? `<p><i class="fa-solid fa-truck-ramp-box"></i> تكلفة الشحن: <strong style="color:var(--status-pending)">$${totalShippingUsd.toFixed(2)}</strong></p>` : ''}
+            ${shipment.shippingType === 'جوي' 
+              ? `<p><i class="fa-solid fa-weight-hanging"></i> الوزن: <strong style="color:var(--status-pending)">${shipment.weightKG} KG</strong></p>`
+              : (parseFloat(shipment.cbmQuantity) > 0 ? `<p><i class="fa-solid fa-truck-ramp-box"></i> الحجم: <strong style="color:var(--status-pending)">${shipment.cbmQuantity} CBM</strong></p>` : '')}
+            ${totalShippingUsd > 0 ? `<p><i class="fa-solid fa-money-bill-wave"></i> تكلفة الشحن: <strong style="color:var(--status-pending)">$${totalShippingUsd.toFixed(2)}</strong></p>` : ''}
             ${(shipment.additionalCosts > 0) ? `<p><i class="fa-solid fa-plus-circle"></i> تكاليف إضافية: <strong style="color:var(--status-customs)">$${parseFloat(shipment.additionalCosts).toFixed(2)}</strong></p>` : ''}
             ${shipment.shaheenCode ? `<p><i class="fa-solid fa-warehouse"></i> رقم الشحنة (مؤسسة الشاهين): <strong>${shipment.shaheenCode}</strong></p>` : ''}
             ${shipment.tripNumber ? `<p><i class="fa-solid fa-plane"></i> رقم الرحلة (الشاهين): <strong>${shipment.tripNumber}</strong></p>` : ''}
@@ -634,7 +687,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     filteredList.forEach(s => {
       totalGoods += parseFloat(s.costUSD) || 0;
-      totalShipping += (parseFloat(s.cbmQuantity) || 0) * (parseFloat(s.cbmPrice) || 0);
+      const shipCost = s.shippingType === 'جوي' 
+                       ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
+                       : (parseFloat(s.cbmQuantity) || 0) * (parseFloat(s.cbmPrice) || 0);
+      totalShipping += shipCost;
       totalExtra += parseFloat(s.additionalCosts) || 0;
     });
 
