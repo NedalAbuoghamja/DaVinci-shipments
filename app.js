@@ -30,9 +30,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const quantityInput = document.getElementById('quantity');
   const cbmQuantityInput = document.getElementById('cbmQuantity');
   const cbmPriceInput = document.getElementById('cbmPrice');
+  const additionalCostsInput = document.getElementById('additionalCosts');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
   const shipmentsContainer = document.getElementById('shipmentsContainer');
   const totalShipmentsCount = document.getElementById('totalShipmentsCount');
+
+  // Summary Elements
+  const totalGoodsUSDElm = document.getElementById('totalGoodsUSD');
+  const totalShippingUSDElm = document.getElementById('totalShippingUSD');
+  const totalExtraUSDElm = document.getElementById('totalExtraUSD');
+  const grandTotalUSDElm = document.getElementById('grandTotalUSD');
+  const grandTotalLYDElm = document.getElementById('grandTotalLYD');
   
   // Search & Filter
   const searchInput = document.getElementById('searchInput');
@@ -168,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if(quantityInput) quantityInput.addEventListener('input', updateCostPreview);
   if(cbmQuantityInput) cbmQuantityInput.addEventListener('input', updateCostPreview);
   if(cbmPriceInput) cbmPriceInput.addEventListener('input', updateCostPreview);
+  if(additionalCostsInput) additionalCostsInput.addEventListener('input', updateCostPreview);
 
   // Search and filter listeners
   if(searchInput) searchInput.addEventListener('input', renderShipments);
@@ -191,6 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
       costUSD: document.getElementById('costUSD').value,
       cbmQuantity: document.getElementById('cbmQuantity').value,
       cbmPrice: document.getElementById('cbmPrice').value,
+      additionalCosts: document.getElementById('additionalCosts').value,
+      shippingType: document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري',
       status: document.getElementById('status').value,
       dateChina: document.getElementById('dateChina').value,
       dateDeparture: document.getElementById('dateDeparture').value,
@@ -213,6 +224,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if(d.costUSD) document.getElementById('costUSD').value = d.costUSD;
       if(d.cbmQuantity) document.getElementById('cbmQuantity').value = d.cbmQuantity;
       if(d.cbmPrice) document.getElementById('cbmPrice').value = d.cbmPrice;
+      if(d.additionalCosts) document.getElementById('additionalCosts').value = d.additionalCosts;
+      if(d.shippingType) {
+        const radio = document.querySelector(`input[name="shippingType"][value="${d.shippingType}"]`);
+        if(radio) radio.checked = true;
+      }
       if(d.status) document.getElementById('status').value = d.status;
       if(d.dateChina) document.getElementById('dateChina').value = d.dateChina;
       if(d.dateDeparture) document.getElementById('dateDeparture').value = d.dateDeparture;
@@ -247,6 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const quantity = parseInt(quantityInput.value) || 1;
     const cbmQuantity = parseFloat(cbmQuantityInput.value) || 0;
     const cbmPrice = parseFloat(cbmPriceInput.value) || 0;
+    const additionalCosts = parseFloat(additionalCostsInput.value) || 0;
+    const shippingType = document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري';
 
     const imageInput = document.getElementById('itemImage');
 
@@ -269,6 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
       quantity,
       cbmQuantity,
       cbmPrice,
+      additionalCosts,
+      shippingType,
       image: imageBase64,
       createdAt: new Date().toLocaleDateString('ar-LY'),
       timestamp: Date.now() // For sorting
@@ -313,6 +333,11 @@ document.addEventListener('DOMContentLoaded', () => {
       setVal('quantity', shipment.quantity || 1);
       setVal('cbmQuantity', shipment.cbmQuantity || '');
       setVal('cbmPrice', shipment.cbmPrice || '');
+      setVal('additionalCosts', shipment.additionalCosts || '');
+      if(shipment.shippingType) {
+        const radio = document.querySelector(`input[name="shippingType"][value="${shipment.shippingType}"]`);
+        if(radio) radio.checked = true;
+      }
       setVal('status', shipment.status || '');
       setVal('dateChina', shipment.dateChina || '');
       setVal('dateDeparture', shipment.dateDeparture || '');
@@ -364,10 +389,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const usd = parseFloat(costUSDInput.value) || 0;
     const cbmQ = cbmQuantityInput ? (parseFloat(cbmQuantityInput.value) || 0) : 0;
     const cbmP = cbmPriceInput ? (parseFloat(cbmPriceInput.value) || 0) : 0;
+    const addCosts = additionalCostsInput ? (parseFloat(additionalCostsInput.value) || 0) : 0;
     const shippingUsd = cbmQ * cbmP;
     
-    // total is goods + shipping
-    const totalUsd = usd + shippingUsd;
+    // total is goods + shipping + additional
+    const totalUsd = usd + shippingUsd + addCosts;
 
     const lyd = (totalUsd * currentExchangeRate).toFixed(2);
     costPreviewLYD.textContent = `${lyd} د.ل`;
@@ -532,6 +558,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const unitCostLyd = (unitCostUsd * currentExchangeRate).toFixed(2);
       const unitCostWithShippingLyd = (unitCostWithShippingUsd * currentExchangeRate).toFixed(2);
       
+      const shipTypeIcon = shipment.shippingType === 'جوي' ? 'fa-plane' : 'fa-ship';
+
       let statusColor = 'var(--status-transit)';
       if (shipment.status.includes('تم الطلب')) statusColor = 'var(--status-pending)';
       if (shipment.status.includes('الجمارك') || shipment.status.includes('رايحة')) statusColor = 'var(--status-customs)'; // red color
@@ -548,6 +576,9 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="status-badge" style="color: ${statusColor}; border-color: ${statusColor}">
             ${shipment.status}
           </div>
+          <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; z-index: 5;">
+            <i class="fa-solid ${shipTypeIcon}"></i> شحن ${shipment.shippingType || 'بحري'}
+          </div>
           ${shipment.image 
             ? `<img src="${shipment.image}" alt="${shipment.itemName}">` 
             : `<i class="fa-solid fa-box no-image"></i>`}
@@ -562,7 +593,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <p><i class="fa-solid fa-barcode"></i> كود الصين: <strong>${shipment.chinaCode}</strong></p>
             <p><i class="fa-solid fa-truck-fast"></i> رقم التتبع: <strong>${shipment.trackingCode}</strong></p>
             <p><i class="fa-solid fa-boxes-stacked"></i> الكمية: <strong style="color:var(--primary-accent)">${qty} قطع/كراتين</strong></p>
-            ${(cbm > 0) ? `<p><i class="fa-solid fa-truck-ramp-box"></i> إجمالي الشحن (CBM): <strong style="color:var(--status-pending)">$${totalShippingUsd.toFixed(2)}</strong></p>` : ''}
+            ${(cbm > 0) ? `<p><i class="fa-solid fa-truck-ramp-box"></i> تكلفة الشحن: <strong style="color:var(--status-pending)">$${totalShippingUsd.toFixed(2)}</strong></p>` : ''}
+            ${(shipment.additionalCosts > 0) ? `<p><i class="fa-solid fa-plus-circle"></i> تكاليف إضافية: <strong style="color:var(--status-customs)">$${parseFloat(shipment.additionalCosts).toFixed(2)}</strong></p>` : ''}
             ${shipment.shaheenCode ? `<p><i class="fa-solid fa-warehouse"></i> رقم الشحنة (مؤسسة الشاهين): <strong>${shipment.shaheenCode}</strong></p>` : ''}
             ${shipment.tripNumber ? `<p><i class="fa-solid fa-plane"></i> رقم الرحلة (الشاهين): <strong>${shipment.tripNumber}</strong></p>` : ''}
             <p><i class="fa-solid fa-calendar-plus"></i> تاريخ الإضافة: <strong>${shipment.createdAt}</strong></p>
@@ -576,9 +608,9 @@ document.addEventListener('DOMContentLoaded', () => {
               <span>تكلفة القطعة (بدون شحن):</span>
               <span dir="ltr">$${unitCostUsd.toFixed(2)} &nbsp;|&nbsp; ${unitCostLyd} د.ل</span>
             </div>
-            ${(cbm > 0) ? `
+            ${(totalShippingUsd > 0 || shipment.additionalCosts > 0) ? `
             <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted); align-items: center;">
-              <span>تكلفة القطعة (بالشحن):</span>
+              <span>تكلفة القطعة (بالشحن والإضافي):</span>
               <span dir="ltr" style="color: var(--status-ready); font-weight: 700;">$${unitCostWithShippingUsd.toFixed(2)} &nbsp;|&nbsp; ${unitCostWithShippingLyd} د.ل</span>
             </div>
             ` : ''}
@@ -591,6 +623,29 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       shipmentsContainer.appendChild(card);
     });
+
+    updateFinancialSummary(filteredShipments);
+  }
+
+  function updateFinancialSummary(filteredList) {
+    let totalGoods = 0;
+    let totalShipping = 0;
+    let totalExtra = 0;
+
+    filteredList.forEach(s => {
+      totalGoods += parseFloat(s.costUSD) || 0;
+      totalShipping += (parseFloat(s.cbmQuantity) || 0) * (parseFloat(s.cbmPrice) || 0);
+      totalExtra += parseFloat(s.additionalCosts) || 0;
+    });
+
+    const grandTotalUSD = totalGoods + totalShipping + totalExtra;
+    const grandTotalLYD = grandTotalUSD * currentExchangeRate;
+
+    if(totalGoodsUSDElm) totalGoodsUSDElm.textContent = `$${totalGoods.toFixed(2)}`;
+    if(totalShippingUSDElm) totalShippingUSDElm.textContent = `$${totalShipping.toFixed(2)}`;
+    if(totalExtraUSDElm) totalExtraUSDElm.textContent = `$${totalExtra.toFixed(2)}`;
+    if(grandTotalUSDElm) grandTotalUSDElm.textContent = `$${grandTotalUSD.toFixed(2)}`;
+    if(grandTotalLYDElm) grandTotalLYDElm.textContent = `${grandTotalLYD.toFixed(2)} د.ل`;
   }
 
   // Admin Panel Setup
