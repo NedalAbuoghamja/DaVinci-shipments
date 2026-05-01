@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // total is goods + shipping + additional
     const totalUsd = usd + shippingUsd + addCosts;
 
-    const lyd = (totalUsd * currentExchangeRate).toFixed(2);
+    const lyd = Math.ceil(totalUsd * currentExchangeRate);
     if (costPreviewLYD) costPreviewLYD.textContent = `${lyd} د.ل`;
 
     const unitTotalCostLYD = (totalUsd * currentExchangeRate) / (quantityInput ? (parseInt(quantityInput.value) || 1) : 1);
@@ -560,10 +560,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const sellPriceLYD = sellingPriceLYDInput ? (parseFloat(sellingPriceLYDInput.value) || 0) : 0;
     if (sellPriceLYD > 0 && quantityInput) {
       const unitCostTotalLYD = (totalUsd * currentExchangeRate) / (parseInt(quantityInput.value) || 1);
-      const profitLYD = sellPriceLYD - unitCostTotalLYD;
+      const profitLYD = Math.ceil(sellPriceLYD - unitCostTotalLYD);
       const profitUSD = profitLYD / currentExchangeRate;
       const margin = ((profitLYD / sellPriceLYD) * 100).toFixed(1);
-      if (profitPreview) profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: ${profitLYD.toFixed(2)} د.ل ($${profitUSD.toFixed(2)}) - نسبة: ${margin}%`;
+      if (profitPreview) profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: ${profitLYD} د.ل ($${profitUSD.toFixed(2)}) - نسبة: ${margin}%`;
     } else {
       if (profitPreview) profitPreview.textContent = '';
     }
@@ -880,17 +880,17 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="card-price" style="flex-direction: column; align-items: stretch; gap: 8px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted); align-items: center;">
               <span>تكلفة القطعة (بدون شحن):</span>
-              <span dir="ltr">$${unitCostUsd.toFixed(2)} &nbsp;|&nbsp; ${unitCostLyd} د.ل</span>
+              <span dir="ltr">$${unitCostUsd.toFixed(2)} &nbsp;|&nbsp; ${Math.ceil(unitCostUsd * currentExchangeRate)} د.ل</span>
             </div>
             ${(totalShippingUsd > 0 || shipment.additionalCosts > 0) ? `
             <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted); align-items: center;">
               <span>تكلفة القطعة (بالشحن والإضافي):</span>
-              <span dir="ltr" style="color: var(--status-ready); font-weight: 700;">$${unitCostWithShippingUsd.toFixed(2)} &nbsp;|&nbsp; ${unitCostWithShippingLyd} د.ل</span>
+              <span dir="ltr" style="color: var(--status-ready); font-weight: 700;">$${unitCostWithShippingUsd.toFixed(2)} &nbsp;|&nbsp; ${Math.ceil(unitCostWithShippingUsd * currentExchangeRate)} د.ل</span>
             </div>
             ` : ''}
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 4px;">
               <div class="usd">الإجمالي الكلي: $${totalCostUsd.toFixed(2)}</div>
-              <div class="lyd" style="font-size: 1.4rem;">${lydCost} د.ل</div>
+              <div class="lyd" style="font-size: 1.4rem;">${Math.ceil(totalCostUsd * currentExchangeRate)} د.ل</div>
             </div>
 
             ${parseFloat(shipment.sellingPriceLYD) > 0 ? `
@@ -901,11 +901,11 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 0.9rem; color: var(--text-muted);">صافي ربح القطعة:</span>
-                <span style="font-weight: 700; color: var(--primary-accent);">${(parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum).toFixed(2)} د.ل ($${((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) / currentExchangeRate).toFixed(2)})</span>
+                <span style="font-weight: 700; color: var(--primary-accent);">${Math.ceil(parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum)} د.ل ($${((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) / currentExchangeRate).toFixed(2)})</span>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; border-top: 1px solid rgba(16, 185, 129, 0.2); padding-top: 5px;">
                 <span style="font-size: 0.9rem; font-weight: bold;">إجمالي الربح المتوقع:</span>
-                <span style="font-size: 1.1rem; font-weight: 800; color: #10b981;">${((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) * qty).toFixed(2)} د.ل ($${(((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) * qty) / currentExchangeRate).toFixed(2)})</span>
+                <span style="font-size: 1.1rem; font-weight: 800; color: #10b981;">${Math.ceil((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) * qty)} د.ل ($${(((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) * qty) / currentExchangeRate).toFixed(2)})</span>
               </div>
             </div>
             ` : ''}
@@ -964,25 +964,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if(totalSeaQuantityElm) totalSeaQuantityElm.textContent = totalSeaQty.toLocaleString();
 
     if(totalGoodsUSDElm) totalGoodsUSDElm.textContent = `$${totalGoods.toFixed(2)}`;
-    if(totalGoodsLYDElm) totalGoodsLYDElm.textContent = `${(totalGoods * currentExchangeRate).toFixed(2)} د.ل`;
+    if(totalGoodsLYDElm) totalGoodsLYDElm.textContent = `${Math.ceil(totalGoods * currentExchangeRate)} د.ل`;
 
     if(totalSeaShippingUSDElm) totalSeaShippingUSDElm.textContent = `$${totalSeaShipping.toFixed(2)}`;
-    if(totalSeaShippingLYDElm) totalSeaShippingLYDElm.textContent = `${(totalSeaShipping * currentExchangeRate).toFixed(2)} د.ل`;
+    if(totalSeaShippingLYDElm) totalSeaShippingLYDElm.textContent = `${Math.ceil(totalSeaShipping * currentExchangeRate)} د.ل`;
 
     if(totalAirShippingUSDElm) totalAirShippingUSDElm.textContent = `$${totalAirShipping.toFixed(2)}`;
-    if(totalAirShippingLYDElm) totalAirShippingLYDElm.textContent = `${(totalAirShipping * currentExchangeRate).toFixed(2)} د.ل`;
+    if(totalAirShippingLYDElm) totalAirShippingLYDElm.textContent = `${Math.ceil(totalAirShipping * currentExchangeRate)} د.ل`;
 
     if(totalExtraUSDElm) totalExtraUSDElm.textContent = `$${totalExtra.toFixed(2)}`;
-    if(totalExtraLYDElm) totalExtraLYDElm.textContent = `${(totalExtra * currentExchangeRate).toFixed(2)} د.ل`;
+    if(totalExtraLYDElm) totalExtraLYDElm.textContent = `${Math.ceil(totalExtra * currentExchangeRate)} د.ل`;
 
     if(totalSalesUSDElm) totalSalesUSDElm.textContent = `$${totalSales.toFixed(2)}`;
-    if(totalSalesLYDElm) totalSalesLYDElm.textContent = `${(totalSales * currentExchangeRate).toFixed(2)} د.ل`;
+    if(totalSalesLYDElm) totalSalesLYDElm.textContent = `${Math.ceil(totalSales * currentExchangeRate)} د.ل`;
 
     if(totalProfitUSDElm) totalProfitUSDElm.textContent = `$${totalProfit.toFixed(2)}`;
-    if(totalProfitLYDElm) totalProfitLYDElm.textContent = `${(totalProfit * currentExchangeRate).toFixed(2)} د.ل`;
+    if(totalProfitLYDElm) totalProfitLYDElm.textContent = `${Math.ceil(totalProfit * currentExchangeRate)} د.ل`;
 
     if(grandTotalUSDElm) grandTotalUSDElm.textContent = `$${grandTotalUSD.toFixed(2)}`;
-    if(grandTotalLYDElm) grandTotalLYDElm.textContent = `${grandTotalLYD.toFixed(2)} د.ل`;
+    if(grandTotalLYDElm) grandTotalLYDElm.textContent = `${Math.ceil(grandTotalLYD)} د.ل`;
   }
 
   // Admin Panel Setup
