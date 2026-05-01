@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const costPreviewLYD = document.getElementById('costPreviewLYD');
   const shipmentsContainer = document.getElementById('shipmentsContainer');
   const totalQuantityCountElm = document.getElementById('totalQuantityCount');
+  const totalAirQuantityElm = document.getElementById('totalAirQuantity');
+  const totalSeaQuantityElm = document.getElementById('totalSeaQuantity');
   const totalShipmentsCount = document.getElementById('totalShipmentsCount');
 
   // Summary Elements
@@ -741,7 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateFinancialSummary(filteredList) {
-    let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0, totalSales = 0, totalProfit = 0, totalQuantity = 0;
+    let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0, totalSales = 0, totalProfit = 0, totalQuantity = 0, totalAirQty = 0, totalSeaQty = 0;
 
     filteredList.forEach(s => {
       // Exclude "Thinking of buying" from totals
@@ -749,6 +751,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const qty = parseFloat(s.quantity) || 0;
       totalQuantity += qty;
+      if (s.shippingType === 'جوي') {
+        totalAirQty += qty;
+      } else {
+        totalSeaQty += qty;
+      }
       totalGoods += parseFloat(s.costUSD) || 0;
       const shipCost = s.shippingType === 'جوي' 
                        ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
@@ -777,6 +784,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const grandTotalLYD = grandTotalUSD * currentExchangeRate;
 
     if(totalQuantityCountElm) totalQuantityCountElm.textContent = totalQuantity.toLocaleString();
+    if(totalAirQuantityElm) totalAirQuantityElm.textContent = totalAirQty.toLocaleString();
+    if(totalSeaQuantityElm) totalSeaQuantityElm.textContent = totalSeaQty.toLocaleString();
 
     if(totalGoodsUSDElm) totalGoodsUSDElm.textContent = `$${totalGoods.toFixed(2)}`;
     if(totalGoodsLYDElm) totalGoodsLYDElm.textContent = `${(totalGoods * currentExchangeRate).toFixed(2)} د.ل`;

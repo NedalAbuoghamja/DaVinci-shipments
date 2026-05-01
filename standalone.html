@@ -450,9 +450,16 @@ body {
         <h2 style="margin-bottom: 20px; font-size: 1.5rem;"><i class="fa-solid fa-chart-pie"></i> ملخص التكاليف المالية (للشحنات المعروضة)</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
           <div class="glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--primary-accent);">
-            <p style="color: var(--primary-accent); font-size: 0.8rem; font-weight: bold;">إجمالي عدد القطع</p>
+            <p style="color: var(--primary-accent); font-size: 0.8rem; font-weight: bold;">إجمالي القطع</p>
             <h3 id="totalQuantityCount" style="color: var(--text-main); font-size: 1.4rem; font-weight: 800;">0</h3>
-            <p style="color: var(--text-muted); font-size: 0.7rem;">قطعة</p>
+          </div>
+          <div class="glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--status-transit);">
+            <p style="color: var(--status-transit); font-size: 0.8rem; font-weight: bold;">قطع (جوي)</p>
+            <h3 id="totalAirQuantity" style="color: var(--text-main); font-size: 1.4rem; font-weight: 800;">0</h3>
+          </div>
+          <div class="glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--status-pending);">
+            <p style="color: var(--status-pending); font-size: 0.8rem; font-weight: bold;">قطع (بحري)</p>
+            <h3 id="totalSeaQuantity" style="color: var(--text-main); font-size: 1.4rem; font-weight: 800;">0</h3>
           </div>
           <div class="glass-panel" style="padding: 15px; text-align: center;">
             <p style="color: var(--text-muted); font-size: 0.8rem;">إجمالي البضاعة</p>
@@ -626,7 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderShipments() {
     shipmentsContainer.innerHTML = '';
     document.getElementById('totalShipmentsCount').textContent = shipments.length;
-    let tg = 0, tsSea = 0, tsAir = 0, te = 0, tSales = 0, tProfit = 0, tQty = 0;
+    let tg = 0, tsSea = 0, tsAir = 0, te = 0, tSales = 0, tProfit = 0, tQty = 0, tAirQty = 0, tSeaQty = 0;
 
     shipments.sort((a,b) => b.timestamp - a.timestamp).forEach(s => {
       const shipCost = s.shippingType === 'جوي' ? (s.weightKG * s.kgPrice) : (s.cbmQuantity * s.cbmPrice);
@@ -635,6 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (s.status !== 'نفكر نشريه') {
         tQty += parseFloat(s.quantity) || 0;
+        if(s.shippingType === 'جوي') tAirQty += (parseFloat(s.quantity) || 0); else tSeaQty += (parseFloat(s.quantity) || 0);
         tg += s.costUSD; 
         if(s.shippingType === 'جوي') tsAir += shipCost; else tsSea += shipCost;
         te += (s.additionalCosts || 0);
@@ -672,6 +680,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('totalQuantityCount').textContent = tQty.toLocaleString();
+    if(document.getElementById('totalAirQuantity')) document.getElementById('totalAirQuantity').textContent = tAirQty.toLocaleString();
+    if(document.getElementById('totalSeaQuantity')) document.getElementById('totalSeaQuantity').textContent = tSeaQty.toLocaleString();
     document.getElementById('totalGoodsUSD').textContent = `$${tg.toFixed(2)}`;
     document.getElementById('totalGoodsLYD').textContent = `${(tg * currentExchangeRate).toFixed(2)} د.ل`;
     

@@ -253,10 +253,17 @@
       <section id="financialSummarySection" class="glass-panel fade-in" style="margin-bottom: 3rem; padding: 2rem;">
         <h2 style="margin-bottom: 20px; font-size: 1.5rem;"><i class="fa-solid fa-chart-pie"></i> ملخص التكاليف المالية (للشحنات المعروضة)</h2>
         <div class="summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--primary-accent);">
-            <p style="color: var(--primary-accent); font-size: 0.85rem; font-weight: bold;">إجمالي عدد القطع</p>
-            <h3 id="totalQuantityCount" style="color: var(--text-main); font-size: 1.6rem; font-weight: 800;">0</h3>
-            <p style="color: var(--text-muted); font-size: 0.75rem;">قطعة</p>
+          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--primary-accent); background: rgba(124, 58, 237, 0.05);">
+            <p style="color: var(--primary-accent); font-size: 0.85rem; font-weight: bold;">إجمالي القطع</p>
+            <h3 id="totalQuantityCount" style="color: var(--text-main); font-size: 1.5rem; font-weight: 800;">0</h3>
+          </div>
+          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--status-transit); background: rgba(59, 130, 246, 0.05);">
+            <p style="color: var(--status-transit); font-size: 0.85rem; font-weight: bold;">قطع (جوي)</p>
+            <h3 id="totalAirQuantity" style="color: var(--text-main); font-size: 1.5rem; font-weight: 800;">0</h3>
+          </div>
+          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--status-pending); background: rgba(245, 158, 11, 0.05);">
+            <p style="color: var(--status-pending); font-size: 0.85rem; font-weight: bold;">قطع (بحري)</p>
+            <h3 id="totalSeaQuantity" style="color: var(--text-main); font-size: 1.5rem; font-weight: 800;">0</h3>
           </div>
           <div class="summary-item glass-panel" style="padding: 15px; text-align: center;">
             <p style="color: var(--text-muted); font-size: 0.85rem;">إجمالي البضاعة</p>
