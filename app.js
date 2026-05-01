@@ -897,7 +897,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="margin-top: 10px; padding: 10px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <span style="font-size: 0.9rem; color: var(--text-muted);">سعر البيع للقطعة:</span>
-                <span style="font-weight: 700; color: #10b981;">${parseFloat(shipment.sellingPriceLYD).toFixed(2)} د.ل ($${(parseFloat(shipment.sellingPriceLYD) / currentExchangeRate).toFixed(2)})</span>
+                <span style="font-weight: 700; color: #10b981;">${Math.ceil(parseFloat(shipment.sellingPriceLYD))} د.ل ($${(parseFloat(shipment.sellingPriceLYD) / currentExchangeRate).toFixed(2)})</span>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 0.9rem; color: var(--text-muted);">صافي ربح القطعة:</span>
