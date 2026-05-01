@@ -320,6 +320,18 @@ body {
     align-items: flex-start;
   }
 }
+
+#profitPreview {
+  transition: all 0.3s ease;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.1);
+  display: inline-block;
+  margin-top: 5px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #10b981;
+}
 </style>
 </head>
 <body>
@@ -387,6 +399,12 @@ body {
               <input type="number" id="additionalCosts" step="0.01" value="0">
             </div>
 
+            <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">
+              <label for="sellingPriceUSD" style="color: #60a5fa;"><i class="fa-solid fa-tag"></i> سعر البيع المقترح للقطعة ($)</label>
+              <input type="number" id="sellingPriceUSD" placeholder="0.00" step="0.01" value="0">
+              <div id="profitPreview"></div>
+            </div>
+
             <div class="form-group" style="grid-column: 1 / -1;">
               <label>نوع الشحن</label>
               <div style="display: flex; gap: 10px;">
@@ -403,6 +421,7 @@ body {
               <label for="status">حالة الشحنة</label>
               <select id="status">
                 <option value="تم الطلب وفي انتظار التجهيز">تم الطلب وفي انتظار التجهيز</option>
+                <option value="نفكر نشريه">نفكر نشريه (قيد الدراسة)</option>
                 <option value="في طريقها لمخزن الصين">في طريقها لمخزن الصين</option>
                 <option value="في الشحن الدولي">في الشحن الدولي</option>
                 <option value="في ميناء الوصول (الجمارك)">في ميناء الوصول (الجمارك)</option>
@@ -429,7 +448,12 @@ body {
 
       <section id="financialSummarySection" class="glass-panel fade-in" style="margin-bottom: 3rem; padding: 2rem;">
         <h2 style="margin-bottom: 20px; font-size: 1.5rem;"><i class="fa-solid fa-chart-pie"></i> ملخص التكاليف المالية (للشحنات المعروضة)</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+          <div class="glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--primary-accent);">
+            <p style="color: var(--primary-accent); font-size: 0.8rem; font-weight: bold;">إجمالي عدد القطع</p>
+            <h3 id="totalQuantityCount" style="color: var(--text-main); font-size: 1.4rem; font-weight: 800;">0</h3>
+            <p style="color: var(--text-muted); font-size: 0.7rem;">قطعة</p>
+          </div>
           <div class="glass-panel" style="padding: 15px; text-align: center;">
             <p style="color: var(--text-muted); font-size: 0.8rem;">إجمالي البضاعة</p>
             <h3 id="totalGoodsUSD" style="color: var(--primary-accent); font-size: 1.2rem;">$0.00</h3>
@@ -450,8 +474,18 @@ body {
             <h3 id="totalExtraUSD" style="color: var(--status-customs); font-size: 1.2rem;">$0.00</h3>
             <p id="totalExtraLYD" style="color: var(--text-muted); font-size: 0.75rem;">0.00 د.ل</p>
           </div>
+          <div class="glass-panel" style="padding: 15px; text-align: center; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6;">
+            <p style="color: #60a5fa; font-size: 0.8rem; font-weight: bold;">إجمالي المبيعات</p>
+            <h3 id="totalSalesUSD" style="color: #60a5fa; font-size: 1.2rem;">$0.00</h3>
+            <p id="totalSalesLYD" style="color: var(--text-muted); font-size: 0.75rem;">0.00 د.ل</p>
+          </div>
           <div class="glass-panel" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--status-ready);">
-            <p style="font-weight: bold; font-size: 0.9rem;">المجموع الكلي</p>
+            <p style="color: var(--status-ready); font-size: 0.8rem; font-weight: bold;">صافي الربح المتوقع</p>
+            <h3 id="totalProfitUSD" style="color: var(--status-ready); font-size: 1.2rem;">$0.00</h3>
+            <p id="totalProfitLYD" style="color: var(--primary-accent); font-size: 1rem;">0.00 د.ل</p>
+          </div>
+          <div class="glass-panel" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--status-ready);">
+            <p style="font-weight: bold; font-size: 0.9rem;">إجمالي التكاليف</p>
             <h3 id="grandTotalUSD" style="color: var(--status-ready); font-size: 1.4rem; font-weight: 800;">$0.00</h3>
             <p id="grandTotalLYD" style="color: var(--primary-accent); font-size: 1.2rem; font-weight: 800;">0.00 د.ل</p>
           </div>
@@ -493,6 +527,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('shipmentForm');
   const globalExchangeRateInput = document.getElementById('globalExchangeRate');
   const costUSDInput = document.getElementById('costUSD');
+  const sellingPriceUSDInput = document.getElementById('sellingPriceUSD');
+  const profitPreview = document.getElementById('profitPreview');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
   const shipmentsContainer = document.getElementById('shipmentsContainer');
   const seaShippingFields = document.getElementById('seaShippingFields');
@@ -548,6 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
       weightKG: parseFloat(document.getElementById('weightKG').value) || 0,
       kgPrice: parseFloat(document.getElementById('kgPrice').value) || 0,
       additionalCosts: parseFloat(document.getElementById('additionalCosts').value) || 0,
+      sellingPriceUSD: parseFloat(sellingPriceUSDInput.value) || 0,
       shippingType: document.querySelector('input[name="shippingType"]:checked').value,
       status: document.getElementById('status').value,
       image: imageBase64,
@@ -561,6 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateCostPreview() {
     const usd = parseFloat(costUSDInput.value) || 0;
+    const qty = parseInt(document.getElementById('quantity').value) || 1;
     const shipType = document.querySelector('input[name="shippingType"]:checked').value;
     let shipUsd = 0;
     if (shipType === 'جوي') {
@@ -571,28 +609,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const extra = parseFloat(document.getElementById('additionalCosts').value) || 0;
     const total = usd + shipUsd + extra;
     costPreviewLYD.textContent = `${(total * currentExchangeRate).toFixed(2)} د.ل`;
+
+    // Profit Preview
+    const sellPrice = parseFloat(sellingPriceUSDInput.value) || 0;
+    if (sellPrice > 0) {
+      const unitCostTotalUSD = total / qty;
+      const profitUSD = sellPrice - unitCostTotalUSD;
+      const profitLYD = (profitUSD * currentExchangeRate).toFixed(2);
+      const margin = ((profitUSD / sellPrice) * 100).toFixed(1);
+      profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: $${profitUSD.toFixed(2)} (${profitLYD} د.ل) - نسبة: ${margin}%`;
+    } else {
+      profitPreview.textContent = '';
+    }
   }
 
   function renderShipments() {
     shipmentsContainer.innerHTML = '';
     document.getElementById('totalShipmentsCount').textContent = shipments.length;
-    let tg = 0, tsSea = 0, tsAir = 0, te = 0;
+    let tg = 0, tsSea = 0, tsAir = 0, te = 0, tSales = 0, tProfit = 0, tQty = 0;
 
     shipments.sort((a,b) => b.timestamp - a.timestamp).forEach(s => {
       const shipCost = s.shippingType === 'جوي' ? (s.weightKG * s.kgPrice) : (s.cbmQuantity * s.cbmPrice);
       const total = s.costUSD + shipCost + (s.additionalCosts || 0);
-      tg += s.costUSD; 
-      if(s.shippingType === 'جوي') tsAir += shipCost; else tsSea += shipCost;
-      te += (s.additionalCosts || 0);
+      const qty = s.quantity || 1;
       
-      // ... card rendering code ...
+      if (s.status !== 'نفكر نشريه') {
+        tQty += parseFloat(s.quantity) || 0;
+        tg += s.costUSD; 
+        if(s.shippingType === 'جوي') tsAir += shipCost; else tsSea += shipCost;
+        te += (s.additionalCosts || 0);
+        
+        const sellPrice = parseFloat(s.sellingPriceUSD) || 0;
+        if (sellPrice > 0) {
+          tSales += sellPrice * qty;
+          tProfit += (sellPrice * qty) - total;
+        }
+      }
+      
+      const statusColor = s.status === 'نفكر نشريه' ? '#a855f7' : (s.status.includes('تم الاستلام') ? 'var(--status-ready)' : 'var(--status-transit)');
 
       const card = document.createElement('div');
       card.className = 'shipment-card fade-in';
       card.innerHTML = `
         <button class="delete-btn" onclick="deleteShipment('${s.id}')"><i class="fa-solid fa-trash"></i></button>
         <div class="card-image-holder">
-          <div class="status-badge">${s.status}</div>
+          <div class="status-badge" style="color:${statusColor}; border-color:${statusColor}">${s.status}</div>
           ${s.image ? `<img src="${s.image}">` : `<i class="fa-solid fa-box" style="font-size:3rem; opacity:0.2;"></i>`}
         </div>
         <div class="card-content">
@@ -600,16 +661,17 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="card-details">
             <p>كود: ${s.chinaCode}</p>
             <p>الشحن: ${s.shippingType} (${s.shippingType === 'جوي' ? s.weightKG + ' KG' : s.cbmQuantity + ' CBM'})</p>
-            <p>إضافي: $${s.additionalCosts || 0}</p>
+            ${parseFloat(s.sellingPriceUSD) > 0 ? `<p style="color:#10b981; font-weight:bold;">البيع: $${parseFloat(s.sellingPriceUSD).toFixed(2)}</p>` : ''}
           </div>
           <div class="card-price">
-            <div style="font-size:0.8rem; color:var(--text-muted);">إجمالي: $${total.toFixed(2)}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">إجمالي التكلفة: $${total.toFixed(2)}</div>
             <div style="font-size:1.3rem; font-weight:800; color:#10b981;">${(total * currentExchangeRate).toFixed(2)} د.ل</div>
           </div>
         </div>`;
       shipmentsContainer.appendChild(card);
     });
 
+    document.getElementById('totalQuantityCount').textContent = tQty.toLocaleString();
     document.getElementById('totalGoodsUSD').textContent = `$${tg.toFixed(2)}`;
     document.getElementById('totalGoodsLYD').textContent = `${(tg * currentExchangeRate).toFixed(2)} د.ل`;
     
@@ -621,6 +683,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('totalExtraUSD').textContent = `$${te.toFixed(2)}`;
     document.getElementById('totalExtraLYD').textContent = `${(te * currentExchangeRate).toFixed(2)} د.ل`;
+
+    document.getElementById('totalSalesUSD').textContent = `$${tSales.toFixed(2)}`;
+    document.getElementById('totalSalesLYD').textContent = `${(tSales * currentExchangeRate).toFixed(2)} د.ل`;
+    
+    document.getElementById('totalProfitUSD').textContent = `$${tProfit.toFixed(2)}`;
+    document.getElementById('totalProfitLYD').textContent = `${(tProfit * currentExchangeRate).toFixed(2)} د.ل`;
     
     const ts = tsSea + tsAir;
     document.getElementById('grandTotalUSD').textContent = `$${(tg+ts+te).toFixed(2)}`;

@@ -389,3 +389,37 @@ body {
     gap: 1rem;
   }
 }
+
+/* Profit & Sales Styles */
+#profitPreview {
+  transition: all 0.3s ease;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.1);
+  display: inline-block;
+}
+
+.summary-item h3 {
+  margin: 5px 0;
+  letter-spacing: -0.5px;
+}
+
+.card-price .profit-badge {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+}
+
+@media (max-width: 600px) {
+  .summary-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}

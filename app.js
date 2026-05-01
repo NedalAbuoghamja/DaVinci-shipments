@@ -35,8 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const seaShippingFields = document.getElementById('seaShippingFields');
   const airShippingFields = document.getElementById('airShippingFields');
   const additionalCostsInput = document.getElementById('additionalCosts');
+  const sellingPriceUSDInput = document.getElementById('sellingPriceUSD');
+  const profitPreview = document.getElementById('profitPreview');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
   const shipmentsContainer = document.getElementById('shipmentsContainer');
+  const totalQuantityCountElm = document.getElementById('totalQuantityCount');
   const totalShipmentsCount = document.getElementById('totalShipmentsCount');
 
   // Summary Elements
@@ -50,6 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const totalExtraLYDElm = document.getElementById('totalExtraLYD');
   const grandTotalUSDElm = document.getElementById('grandTotalUSD');
   const grandTotalLYDElm = document.getElementById('grandTotalLYD');
+  
+  const totalSalesUSDElm = document.getElementById('totalSalesUSD');
+  const totalSalesLYDElm = document.getElementById('totalSalesLYD');
+  const totalProfitUSDElm = document.getElementById('totalProfitUSD');
+  const totalProfitLYDElm = document.getElementById('totalProfitLYD');
   
   // Search & Filter
   const searchInput = document.getElementById('searchInput');
@@ -188,6 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if(weightKGInput) weightKGInput.addEventListener('input', updateCostPreview);
   if(kgPriceInput) kgPriceInput.addEventListener('input', updateCostPreview);
   if(additionalCostsInput) additionalCostsInput.addEventListener('input', updateCostPreview);
+  if(sellingPriceUSDInput) sellingPriceUSDInput.addEventListener('input', updateCostPreview);
 
   // Toggle Shipping Fields
   const shippingTypeRadios = document.querySelectorAll('input[name="shippingType"]');
@@ -229,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
       weightKG: document.getElementById('weightKG').value,
       kgPrice: document.getElementById('kgPrice').value,
       additionalCosts: document.getElementById('additionalCosts').value,
+      sellingPriceUSD: document.getElementById('sellingPriceUSD').value,
       shippingType: document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري',
       status: document.getElementById('status').value,
       dateChina: document.getElementById('dateChina').value,
@@ -255,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if(d.weightKG) document.getElementById('weightKG').value = d.weightKG;
       if(d.kgPrice) document.getElementById('kgPrice').value = d.kgPrice;
       if(d.additionalCosts) document.getElementById('additionalCosts').value = d.additionalCosts;
+      if(d.sellingPriceUSD) document.getElementById('sellingPriceUSD').value = d.sellingPriceUSD;
       if(d.shippingType) {
         const radio = document.querySelector(`input[name="shippingType"][value="${d.shippingType}"]`);
         if(radio) {
@@ -299,6 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const weightKG = parseFloat(weightKGInput.value) || 0;
     const kgPrice = parseFloat(kgPriceInput.value) || 0;
     const additionalCosts = parseFloat(additionalCostsInput.value) || 0;
+    const sellingPriceUSD = parseFloat(sellingPriceUSDInput.value) || 0;
     const shippingType = document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري';
 
     const imageInput = document.getElementById('itemImage');
@@ -325,6 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
       weightKG,
       kgPrice,
       additionalCosts,
+      sellingPriceUSD,
       shippingType,
       image: imageBase64,
       createdAt: new Date().toLocaleDateString('ar-LY'),
@@ -373,6 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setVal('weightKG', shipment.weightKG || '');
       setVal('kgPrice', shipment.kgPrice || '');
       setVal('additionalCosts', shipment.additionalCosts || '');
+      setVal('sellingPriceUSD', shipment.sellingPriceUSD || '');
       if(shipment.shippingType) {
         const radio = document.querySelector(`input[name="shippingType"][value="${shipment.shippingType}"]`);
         if(radio) {
@@ -449,6 +463,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const lyd = (totalUsd * currentExchangeRate).toFixed(2);
     costPreviewLYD.textContent = `${lyd} د.ل`;
+
+    // Profit Preview
+    const sellPrice = parseFloat(sellingPriceUSDInput.value) || 0;
+    if (sellPrice > 0) {
+      const unitCostTotalUSD = totalUsd / (parseInt(quantityInput.value) || 1);
+      const profitUSD = sellPrice - unitCostTotalUSD;
+      const profitLYD = (profitUSD * currentExchangeRate).toFixed(2);
+      const margin = ((profitUSD / sellPrice) * 100).toFixed(1);
+      profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: $${profitUSD.toFixed(2)} (${profitLYD} د.ل) - نسبة: ${margin}%`;
+    } else {
+      profitPreview.textContent = '';
+    }
   }
 
   // Global delete function
@@ -503,7 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       toExport.sort((a,b) => b.timestamp - a.timestamp);
 
-      const headers = ['اسم الشحنة', 'كود الصين', 'رقم التتبع', 'رقم الشحنة (الشاهين)', 'رقم الرحلة (الشاهين)', 'تاريخ الإضافة', 'وصل مخزن الصين', 'غادر الصين', 'وصل ليبيا', 'الكمية', 'حجم CBM', 'سعر CBM', 'إجمالي الشحن ($)', 'تكلفة البضاعة ($)', 'تكلفة القطعة بدون شحن ($)', 'تكلفة القطعة بالشحن ($)', 'التكلفة الكلية ($)', 'التكلفة الكلية (د.ل)', 'الحالة'];
+      const headers = ['اسم الشحنة', 'كود الصين', 'رقم التتبع', 'رقم الشحنة (الشاهين)', 'رقم الرحلة (الشاهين)', 'تاريخ الإضافة', 'وصل مخزن الصين', 'غادر الصين', 'وصل ليبيا', 'الكمية', 'حجم CBM', 'سعر CBM', 'إجمالي الشحن ($)', 'تكلفة البضاعة ($)', 'تكلفة القطعة بدون شحن ($)', 'تكلفة القطعة بالشحن ($)', 'سعر البيع ($)', 'ربح القطعة ($)', 'إجمالي الربح ($)', 'التكلفة الكلية ($)', 'التكلفة الكلية (د.ل)', 'الحالة'];
       
       let csvContent = '\uFEFF' + headers.join(',') + '\n';
       
@@ -511,12 +537,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const qty = s.quantity || 1;
         const cbm = s.cbmQuantity || 0;
         const cbmp = s.cbmPrice || 0;
-        const totalShippingUsd = cbm * cbmp;
-        const totalCostUsd = s.costUSD + totalShippingUsd;
+        const totalShippingUsd = s.shippingType === 'جوي' 
+                                 ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
+                                 : (parseFloat(s.cbmQuantity) || 0) * (parseFloat(s.cbmPrice) || 0);
+        const totalCostUsd = s.costUSD + totalShippingUsd + (parseFloat(s.additionalCosts) || 0);
         
         const unitCostUsd = s.costUSD / qty;
         const unitCostWithShippingUsd = totalCostUsd / qty;
         const lydCost = totalCostUsd * currentExchangeRate;
+
+        const sellPrice = parseFloat(s.sellingPriceUSD) || 0;
+        const profitPerUnit = sellPrice > 0 ? (sellPrice - unitCostWithShippingUsd) : 0;
+        const totalProfit = profitPerUnit * qty;
 
         const row = [
           `"${(s.itemName || '').replace(/"/g, '""')}"`,
@@ -535,6 +567,9 @@ document.addEventListener('DOMContentLoaded', () => {
           s.costUSD.toFixed(2),
           unitCostUsd.toFixed(2),
           unitCostWithShippingUsd.toFixed(2),
+          sellPrice.toFixed(2),
+          profitPerUnit.toFixed(2),
+          totalProfit.toFixed(2),
           totalCostUsd.toFixed(2),
           lydCost.toFixed(2),
           `"${(s.status || '').replace(/"/g, '""')}"`
@@ -617,6 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let statusColor = 'var(--status-transit)';
       if (shipment.status.includes('تم الطلب')) statusColor = 'var(--status-pending)';
+      if (shipment.status.includes('نفكر نشريه')) statusColor = '#a855f7'; // Purple for planning
       if (shipment.status.includes('الجمارك') || shipment.status.includes('رايحة')) statusColor = 'var(--status-customs)'; // red color
       if (shipment.status.includes('جاهزة') || shipment.status.includes('الاستلام')) statusColor = 'var(--status-ready)';
 
@@ -676,6 +712,23 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="usd">الإجمالي الكلي: $${totalCostUsd.toFixed(2)}</div>
               <div class="lyd" style="font-size: 1.4rem;">${lydCost} د.ل</div>
             </div>
+
+            ${parseFloat(shipment.sellingPriceUSD) > 0 ? `
+            <div style="margin-top: 10px; padding: 10px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <span style="font-size: 0.9rem; color: var(--text-muted);">سعر البيع للقطعة:</span>
+                <span style="font-weight: 700; color: #10b981;">$${parseFloat(shipment.sellingPriceUSD).toFixed(2)} (${(parseFloat(shipment.sellingPriceUSD) * currentExchangeRate).toFixed(2)} د.ل)</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.9rem; color: var(--text-muted);">صافي ربح القطعة:</span>
+                <span style="font-weight: 700; color: var(--primary-accent);">$${(parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd).toFixed(2)} (${((parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd) * currentExchangeRate).toFixed(2)} د.ل)</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; border-top: 1px solid rgba(16, 185, 129, 0.2); padding-top: 5px;">
+                <span style="font-size: 0.9rem; font-weight: bold;">إجمالي الربح المتوقع:</span>
+                <span style="font-size: 1.1rem; font-weight: 800; color: #10b981;">$${((parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd) * qty).toFixed(2)} (${(((parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd) * qty) * currentExchangeRate).toFixed(2)} د.ل)</span>
+              </div>
+            </div>
+            ` : ''}
           </div>
         </div>
       `;
@@ -686,9 +739,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateFinancialSummary(filteredList) {
-    let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0;
+    let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0, totalSales = 0, totalProfit = 0, totalQuantity = 0;
 
     filteredList.forEach(s => {
+      // Exclude "Thinking of buying" from totals
+      if (s.status === 'نفكر نشريه') return;
+
+      const qty = parseFloat(s.quantity) || 0;
+      totalQuantity += qty;
       totalGoods += parseFloat(s.costUSD) || 0;
       const shipCost = s.shippingType === 'جوي' 
                        ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
@@ -700,12 +758,22 @@ document.addEventListener('DOMContentLoaded', () => {
         totalSeaShipping += shipCost;
       }
       
-      totalExtra += parseFloat(s.additionalCosts) || 0;
+      const extra = parseFloat(s.additionalCosts) || 0;
+      totalExtra += extra;
+
+      const totalCostUsd = (parseFloat(s.costUSD) || 0) + shipCost + extra;
+      const sellPrice = parseFloat(s.sellingPriceUSD) || 0;
+      if (sellPrice > 0) {
+        totalSales += sellPrice * qty;
+        totalProfit += (sellPrice * qty) - totalCostUsd;
+      }
     });
 
     const totalShipping = totalSeaShipping + totalAirShipping;
     const grandTotalUSD = totalGoods + totalShipping + totalExtra;
     const grandTotalLYD = grandTotalUSD * currentExchangeRate;
+
+    if(totalQuantityCountElm) totalQuantityCountElm.textContent = totalQuantity.toLocaleString();
 
     if(totalGoodsUSDElm) totalGoodsUSDElm.textContent = `$${totalGoods.toFixed(2)}`;
     if(totalGoodsLYDElm) totalGoodsLYDElm.textContent = `${(totalGoods * currentExchangeRate).toFixed(2)} د.ل`;
@@ -718,6 +786,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(totalExtraUSDElm) totalExtraUSDElm.textContent = `$${totalExtra.toFixed(2)}`;
     if(totalExtraLYDElm) totalExtraLYDElm.textContent = `${(totalExtra * currentExchangeRate).toFixed(2)} د.ل`;
+
+    if(totalSalesUSDElm) totalSalesUSDElm.textContent = `$${totalSales.toFixed(2)}`;
+    if(totalSalesLYDElm) totalSalesLYDElm.textContent = `${(totalSales * currentExchangeRate).toFixed(2)} د.ل`;
+
+    if(totalProfitUSDElm) totalProfitUSDElm.textContent = `$${totalProfit.toFixed(2)}`;
+    if(totalProfitLYDElm) totalProfitLYDElm.textContent = `${(totalProfit * currentExchangeRate).toFixed(2)} د.ل`;
 
     if(grandTotalUSDElm) grandTotalUSDElm.textContent = `$${grandTotalUSD.toFixed(2)}`;
     if(grandTotalLYDElm) grandTotalLYDElm.textContent = `${grandTotalLYD.toFixed(2)} د.ل`;

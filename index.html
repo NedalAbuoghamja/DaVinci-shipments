@@ -164,6 +164,12 @@
                   <input type="number" id="additionalCosts" placeholder="0.00" step="0.01" value="0">
                 </div>
 
+                <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                  <label for="sellingPriceUSD" style="color: #60a5fa;"><i class="fa-solid fa-tag"></i> سعر البيع المقترح للقطعة ($)</label>
+                  <input type="number" id="sellingPriceUSD" placeholder="0.00" step="0.01" value="0">
+                  <div id="profitPreview" style="margin-top: 5px; font-size: 0.85rem; font-weight: bold; color: #10b981;"></div>
+                </div>
+
                 <div class="form-group" style="grid-column: 1 / -1;">
                   <label>نوع الشحن</label>
                   <div style="display: flex; gap: 10px;">
@@ -182,6 +188,7 @@
               <label for="status">حالة الشحنة (تتبع)</label>
               <select id="status" required>
                 <option value="تم الطلب وفي انتظار التجهيز">تم الطلب وفي انتظار التجهيز</option>
+                <option value="نفكر نشريه">نفكر نشريه (قيد الدراسة)</option>
                 <option value="في طريقها لمخزن الصين">في طريقها لمخزن الصين</option>
                 <option value="الآن في مخزن الصين">الآن في مخزن الصين</option>
                 <option value="واصلة لمخزن الصين ورايحة">واصلة لمخزن الصين ورايحة (مفقودة)</option>
@@ -246,6 +253,11 @@
       <section id="financialSummarySection" class="glass-panel fade-in" style="margin-bottom: 3rem; padding: 2rem;">
         <h2 style="margin-bottom: 20px; font-size: 1.5rem;"><i class="fa-solid fa-chart-pie"></i> ملخص التكاليف المالية (للشحنات المعروضة)</h2>
         <div class="summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--primary-accent);">
+            <p style="color: var(--primary-accent); font-size: 0.85rem; font-weight: bold;">إجمالي عدد القطع</p>
+            <h3 id="totalQuantityCount" style="color: var(--text-main); font-size: 1.6rem; font-weight: 800;">0</h3>
+            <p style="color: var(--text-muted); font-size: 0.75rem;">قطعة</p>
+          </div>
           <div class="summary-item glass-panel" style="padding: 15px; text-align: center;">
             <p style="color: var(--text-muted); font-size: 0.85rem;">إجمالي البضاعة</p>
             <h3 id="totalGoodsUSD" style="color: var(--primary-accent); font-size: 1.2rem;">$0.00</h3>
@@ -266,8 +278,18 @@
             <h3 id="totalExtraUSD" style="color: var(--status-customs); font-size: 1.2rem;">$0.00</h3>
             <p id="totalExtraLYD" style="color: var(--text-muted); font-size: 0.75rem;">0.00 د.ل</p>
           </div>
+          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6;">
+            <p style="color: #60a5fa; font-size: 0.9rem; font-weight: bold;">إجمالي المبيعات</p>
+            <h3 id="totalSalesUSD" style="color: #60a5fa; font-size: 1.4rem; font-weight: 800;">$0.00</h3>
+            <p id="totalSalesLYD" style="color: var(--text-muted); font-size: 0.75rem;">0.00 د.ل</p>
+          </div>
           <div class="summary-item glass-panel" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--status-ready);">
-            <p style="color: var(--text-main); font-size: 0.9rem; font-weight: bold;">المجموع الكلي</p>
+            <p style="color: var(--status-ready); font-size: 0.9rem; font-weight: bold;">صافي الربح المتوقع</p>
+            <h3 id="totalProfitUSD" style="color: var(--status-ready); font-size: 1.4rem; font-weight: 800;">$0.00</h3>
+            <p id="totalProfitLYD" style="color: var(--primary-accent); font-size: 1.2rem; font-weight: 800;">0.00 د.ل</p>
+          </div>
+          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--status-ready);">
+            <p style="color: var(--text-main); font-size: 0.9rem; font-weight: bold;">المجموع الكلي للتكاليف</p>
             <h3 id="grandTotalUSD" style="color: var(--status-ready); font-size: 1.4rem; font-weight: 800;">$0.00</h3>
             <p id="grandTotalLYD" style="color: var(--primary-accent); font-size: 1.2rem; font-weight: 800;">0.00 د.ل</p>
           </div>
@@ -293,6 +315,7 @@
             <select id="statusFilter" style="width: 100%;">
               <option value="الكل">جميع الحالات</option>
               <option value="تم الطلب وفي انتظار التجهيز">تم الطلب وفي انتظار التجهيز</option>
+              <option value="نفكر نشريه">نفكر نشريه (قيد الدراسة)</option>
               <option value="في طريقها لمخزن الصين">في طريقها لمخزن الصين</option>
               <option value="الآن في مخزن الصين">الآن في مخزن الصين</option>
               <option value="واصلة لمخزن الصين ورايحة">واصلة لمخزن الصين ورايحة (مفقودة)</option>
@@ -311,6 +334,6 @@
     </main>
   </div>
 
-  <script type="module" src="app.js?v=16"></script>
+  <script type="module" src="app.js?v=18"></script>
 </body>
 </html>
