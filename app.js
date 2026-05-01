@@ -218,11 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
   shippingTypeRadios.forEach(radio => {
     radio.addEventListener('change', (e) => {
       if (e.target.value === 'جوي') {
-        seaShippingFields.style.display = 'none';
-        airShippingFields.style.display = 'grid';
+        if (seaShippingFields) seaShippingFields.style.display = 'none';
+        if (airShippingFields) airShippingFields.style.display = 'grid';
       } else {
-        seaShippingFields.style.display = 'grid';
-        airShippingFields.style.display = 'none';
+        if (seaShippingFields) seaShippingFields.style.display = 'grid';
+        if (airShippingFields) airShippingFields.style.display = 'none';
       }
       updateCostPreview();
     });
@@ -311,11 +311,11 @@ document.addEventListener('DOMContentLoaded', () => {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const itemName = document.getElementById('itemName').value;
-    const chinaCode = document.getElementById('chinaCode').value;
-    const trackingCode = document.getElementById('trackingCode').value;
-    const costUSD = parseFloat(costUSDInput.value);
-    const status = document.getElementById('status').value;
+    const itemName = document.getElementById('itemName')?.value || '';
+    const chinaCode = document.getElementById('chinaCode')?.value || '';
+    const trackingCode = document.getElementById('trackingCode')?.value || '';
+    const costUSD = costUSDInput ? parseFloat(costUSDInput.value) : 0;
+    const status = document.getElementById('status')?.value || 'تم الطلب وفي انتظار التجهيز';
     
     // Dates
     const dateChina = document.getElementById('dateChina')?.value || '';
@@ -409,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setVal('kgPrice', shipment.kgPrice || '');
       setVal('additionalCosts', shipment.additionalCosts || '');
       setVal('sellingPriceLYD', shipment.sellingPriceLYD || '');
+      
       if(shipment.shippingType) {
         const radio = document.querySelector(`input[name="shippingType"][value="${shipment.shippingType}"]`);
         if(radio) {
@@ -437,7 +438,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // Scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch(err) {
-      alert("حدث خطأ في النظام. يرجى تحديث الصفحة: " + err.message);
+      console.error(err);
+      alert("حدث خطأ في التعديل: " + err.message);
     }
   };
 
