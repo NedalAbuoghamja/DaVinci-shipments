@@ -567,6 +567,35 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCostPreviewFn = updateCostPreview;
 
 
+  // Bulk Apply 50% Profit to all existing shipments
+  const applyAutoProfitBtn = document.getElementById('applyAutoProfitBtn');
+  if (applyAutoProfitBtn) {
+    applyAutoProfitBtn.addEventListener('click', async () => {
+      if (shipments.length === 0) return;
+      if (!confirm('هل أنت متأكد من تحديث أسعار البيع لجميع الشحنات المسجلة حالياً لتكون بتكلفة + 50% ربح؟ سيتم الكتابة فوق الأسعار القديمة.')) return;
+
+      const updates = {};
+      shipments.forEach(s => {
+        const qty = s.quantity || 1;
+        const totalShippingUsd = s.shippingType === 'جوي' 
+                                 ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
+                                 : (parseFloat(s.cbmQuantity) || 0) * (parseFloat(s.cbmPrice) || 0);
+        const totalCostUsd = s.costUSD + totalShippingUsd + (parseFloat(s.additionalCosts) || 0);
+        const unitTotalCostLYD = (totalCostUsd * currentExchangeRate) / qty;
+        const newSellingPriceLYD = (unitTotalCostLYD * 1.5).toFixed(2);
+        
+        updates[`${s.id}/sellingPriceLYD`] = parseFloat(newSellingPriceLYD);
+      });
+
+      try {
+        await update(ref(db, 'users/' + currentUserId + '/shipments'), updates);
+        alert('تم تحديث جميع أسعار المنتجات المسجلة بنسبة ربح 50% بنجاح!');
+      } catch (err) {
+        alert('خطأ أثناء التحديث: ' + err.message);
+      }
+    });
+  }
+
   // Export to Excel (CSV)
   const exportBtn = document.getElementById('exportExcelBtn');
   if (exportBtn) {
