@@ -23,6 +23,78 @@ let shipments = [];
 let currentExchangeRate = 7.00;
 let editingShipmentId = null;
 
+// Helper to update cost preview (forward declaration)
+let updateCostPreviewFn = () => {};
+
+// Global edit function
+window.editShipment = function(id) {
+  console.log("Editing shipment:", id);
+  try {
+    const shipment = shipments.find(s => s.id === id);
+    if (!shipment) { alert('لم يتم العثور على الشحنة!'); return; }
+
+    editingShipmentId = id;
+    
+    // Populate form safely
+    const setVal = (elmId, val) => { const el = document.getElementById(elmId); if (el) el.value = val; };
+    
+    setVal('itemName', shipment.itemName || '');
+    setVal('chinaCode', shipment.chinaCode || '');
+    setVal('trackingCode', (shipment.trackingCode !== 'لم يتم الإصدار بعد') ? shipment.trackingCode : '');
+    setVal('costUSD', shipment.costUSD || '');
+    setVal('quantity', shipment.quantity || 1);
+    setVal('cbmQuantity', shipment.cbmQuantity || '');
+    setVal('cbmPrice', shipment.cbmPrice || '');
+    setVal('weightKG', shipment.weightKG || '');
+    setVal('kgPrice', shipment.kgPrice || '');
+    setVal('additionalCosts', shipment.additionalCosts || '');
+    setVal('sellingPriceLYD', shipment.sellingPriceLYD || '');
+    
+    if(shipment.shippingType) {
+      const radio = document.querySelector(`input[name="shippingType"][value="${shipment.shippingType}"]`);
+      if(radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change'));
+      }
+    }
+    setVal('status', shipment.status || '');
+    setVal('dateChina', shipment.dateChina || '');
+    setVal('dateDeparture', shipment.dateDeparture || '');
+    setVal('dateLibya', shipment.dateLibya || '');
+    setVal('shaheenCode', shipment.shaheenCode || '');
+    setVal('tripNumber', shipment.tripNumber || '');
+    
+    // Update buttons
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+      submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> حفظ التعديلات';
+      submitBtn.style.background = 'var(--status-ready)';
+    }
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    if (cancelBtn) cancelBtn.style.display = 'inline-block';
+
+    updateCostPreviewFn();
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(err) {
+    console.error("Edit error:", err);
+    alert("حدث خطأ في التعديل: " + err.message);
+  }
+};
+
+// Global delete function
+window.deleteShipment = async function(id) {
+  try {
+    if(confirm('هل أنت متأكد من حذف هذه الشحنة نهائياً من جميع الأجهزة؟')) {
+      const itemRef = ref(db, 'users/' + currentUserId + '/shipments/' + id);
+      await remove(itemRef); // Removes from Firebase Cloud ☁️
+    }
+  } catch(err) {
+    alert("فشل في حذف الشحنة. تأكد من اتصال الإنترنت وحاول تحديث الصفحة: " + err.message);
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('shipmentForm');
   const globalExchangeRateInput = document.getElementById('globalExchangeRate');
@@ -387,62 +459,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Global edit function
-  window.editShipment = function(id) {
-    console.log("Editing shipment:", id);
-    try {
-      const shipment = shipments.find(s => s.id === id);
-      if (!shipment) { alert('لم يتم العثور على الشحنة!'); return; }
-
-      editingShipmentId = id;
-      
-      // Populate form safely
-      const setVal = (elmId, val) => { const el = document.getElementById(elmId); if (el) el.value = val; };
-      
-      setVal('itemName', shipment.itemName || '');
-      setVal('chinaCode', shipment.chinaCode || '');
-      setVal('trackingCode', (shipment.trackingCode !== 'لم يتم الإصدار بعد') ? shipment.trackingCode : '');
-      setVal('costUSD', shipment.costUSD || '');
-      setVal('quantity', shipment.quantity || 1);
-      setVal('cbmQuantity', shipment.cbmQuantity || '');
-      setVal('cbmPrice', shipment.cbmPrice || '');
-      setVal('weightKG', shipment.weightKG || '');
-      setVal('kgPrice', shipment.kgPrice || '');
-      setVal('additionalCosts', shipment.additionalCosts || '');
-      setVal('sellingPriceLYD', shipment.sellingPriceLYD || '');
-      
-      if(shipment.shippingType) {
-        const radio = document.querySelector(`input[name="shippingType"][value="${shipment.shippingType}"]`);
-        if(radio) {
-          radio.checked = true;
-          radio.dispatchEvent(new Event('change'));
-        }
-      }
-      setVal('status', shipment.status || '');
-      setVal('dateChina', shipment.dateChina || '');
-      setVal('dateDeparture', shipment.dateDeparture || '');
-      setVal('dateLibya', shipment.dateLibya || '');
-      setVal('shaheenCode', shipment.shaheenCode || '');
-      setVal('tripNumber', shipment.tripNumber || '');
-      
-      // Update buttons
-      const submitBtn = document.getElementById('submitBtn');
-      if (submitBtn) {
-        submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> حفظ التعديلات';
-        submitBtn.style.background = 'var(--status-ready)';
-      }
-      const cancelBtn = document.getElementById('cancelEditBtn');
-      if (cancelBtn) cancelBtn.style.display = 'inline-block';
-
-      if(typeof updateCostPreview === 'function') updateCostPreview();
-      
-      // Scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch(err) {
-      console.error("Edit error:", err);
-      alert("حدث خطأ في التعديل: " + err.message);
-    }
-  };
 
   document.getElementById('cancelEditBtn').addEventListener('click', () => {
     editingShipmentId = null;
@@ -501,18 +517,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (profitPreview) profitPreview.textContent = '';
     }
   }
+  updateCostPreviewFn = updateCostPreview;
 
-  // Global delete function
-  window.deleteShipment = async function(id) {
-    try {
-      if(confirm('هل أنت متأكد من حذف هذه الشحنة نهائياً من جميع الأجهزة؟')) {
-        const itemRef = ref(db, 'users/' + currentUserId + '/shipments/' + id);
-        await remove(itemRef); // Removes from Firebase Cloud ☁️
-      }
-    } catch(err) {
-      alert("فشل في حذف الشحنة. تأكد من اتصال الإنترنت وحاول تحديث الصفحة: " + err.message);
-    }
-  };
 
   // Export to Excel (CSV)
   const exportBtn = document.getElementById('exportExcelBtn');
