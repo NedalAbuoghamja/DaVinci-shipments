@@ -276,14 +276,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Calculate LYD automatically when USD typed
-  costUSDInput.addEventListener('input', updateCostPreview);
+  if(costUSDInput) costUSDInput.addEventListener('input', updateCostPreview);
   if(quantityInput) quantityInput.addEventListener('input', updateCostPreview);
   if(cbmQuantityInput) cbmQuantityInput.addEventListener('input', updateCostPreview);
   if(cbmPriceInput) cbmPriceInput.addEventListener('input', updateCostPreview);
   if(weightKGInput) weightKGInput.addEventListener('input', updateCostPreview);
   if(kgPriceInput) kgPriceInput.addEventListener('input', updateCostPreview);
   if(additionalCostsInput) additionalCostsInput.addEventListener('input', updateCostPreview);
-  if(sellingPriceUSDInput) sellingPriceUSDInput.addEventListener('input', updateCostPreview);
+  if(sellingPriceLYDInput) sellingPriceLYDInput.addEventListener('input', updateCostPreview);
 
   // Toggle Shipping Fields
   const shippingTypeRadios = document.querySelectorAll('input[name="shippingType"]');
@@ -337,25 +337,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function saveFormDraft() {
     if (editingShipmentId) return;
+    const getV = (id) => document.getElementById(id)?.value || '';
     const draft = {
-      itemName: document.getElementById('itemName').value,
-      chinaCode: document.getElementById('chinaCode').value,
-      trackingCode: document.getElementById('trackingCode').value,
-      quantity: document.getElementById('quantity').value,
-      costUSD: document.getElementById('costUSD').value,
-      cbmQuantity: document.getElementById('cbmQuantity').value,
-      cbmPrice: document.getElementById('cbmPrice').value,
-      weightKG: document.getElementById('weightKG').value,
-      kgPrice: document.getElementById('kgPrice').value,
-      additionalCosts: document.getElementById('additionalCosts').value,
-      sellingPriceLYD: document.getElementById('sellingPriceLYD').value,
+      itemName: getV('itemName'),
+      chinaCode: getV('chinaCode'),
+      trackingCode: getV('trackingCode'),
+      quantity: getV('quantity'),
+      costUSD: getV('costUSD'),
+      cbmQuantity: getV('cbmQuantity'),
+      cbmPrice: getV('cbmPrice'),
+      weightKG: getV('weightKG'),
+      kgPrice: getV('kgPrice'),
+      additionalCosts: getV('additionalCosts'),
+      sellingPriceLYD: getV('sellingPriceLYD'),
       shippingType: document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري',
-      status: document.getElementById('status').value,
-      dateChina: document.getElementById('dateChina').value,
-      dateDeparture: document.getElementById('dateDeparture').value,
-      dateLibya: document.getElementById('dateLibya').value,
-      shaheenCode: document.getElementById('shaheenCode').value,
-      tripNumber: document.getElementById('tripNumber').value
+      status: getV('status'),
+      dateChina: getV('dateChina'),
+      dateDeparture: getV('dateDeparture'),
+      dateLibya: getV('dateLibya'),
+      shaheenCode: getV('shaheenCode'),
+      tripNumber: getV('tripNumber')
     };
     localStorage.setItem('shipmentDraft', JSON.stringify(draft));
   }
@@ -365,30 +366,44 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!dStr) return;
     try {
       const d = JSON.parse(dStr);
-      if(d.itemName) document.getElementById('itemName').value = d.itemName;
-      if(d.chinaCode) document.getElementById('chinaCode').value = d.chinaCode;
-      if(d.trackingCode) document.getElementById('trackingCode').value = d.trackingCode;
-      if(d.quantity) document.getElementById('quantity').value = d.quantity;
-      if(d.costUSD) document.getElementById('costUSD').value = d.costUSD;
-      if(d.cbmQuantity) document.getElementById('cbmQuantity').value = d.cbmQuantity;
-      if(d.cbmPrice) document.getElementById('cbmPrice').value = d.cbmPrice;
-      if(d.weightKG) document.getElementById('weightKG').value = d.weightKG;
-      if(d.kgPrice) document.getElementById('kgPrice').value = d.kgPrice;
-      if(d.additionalCosts) document.getElementById('additionalCosts').value = d.additionalCosts;
-      if(d.sellingPriceLYD) document.getElementById('sellingPriceLYD').value = d.sellingPriceLYD;
+      const setV = (id, val) => { const el = document.getElementById(id); if(el && val !== undefined) el.value = val; };
+      
+      setV('itemName', d.itemName);
+      setV('chinaCode', d.chinaCode);
+      setV('trackingCode', d.trackingCode);
+      setV('quantity', d.quantity);
+      setV('costUSD', d.costUSD);
+      setV('cbmQuantity', d.cbmQuantity);
+      setV('cbmPrice', d.cbmPrice);
+      setV('weightKG', d.weightKG);
+      setV('kgPrice', d.kgPrice);
+      setV('additionalCosts', d.additionalCosts);
+      setV('sellingPriceLYD', d.sellingPriceLYD);
+      
       if(d.shippingType) {
         const radio = document.querySelector(`input[name="shippingType"][value="${d.shippingType}"]`);
         if(radio) {
           radio.checked = true;
-          radio.dispatchEvent(new Event('change'));
+          if(typeof updateCostPreview === 'function') {
+            // trigger display toggle manually to avoid potential issues
+            const sea = document.getElementById('seaShippingFields');
+            const air = document.getElementById('airShippingFields');
+            if(d.shippingType === 'جوي') {
+              if(sea) sea.style.display = 'none';
+              if(air) air.style.display = 'grid';
+            } else {
+              if(sea) sea.style.display = 'grid';
+              if(air) air.style.display = 'none';
+            }
+          }
         }
       }
-      if(d.status) document.getElementById('status').value = d.status;
-      if(d.dateChina) document.getElementById('dateChina').value = d.dateChina;
-      if(d.dateDeparture) document.getElementById('dateDeparture').value = d.dateDeparture;
-      if(d.dateLibya) document.getElementById('dateLibya').value = d.dateLibya;
-      if(d.shaheenCode) document.getElementById('shaheenCode').value = d.shaheenCode;
-      if(d.tripNumber) document.getElementById('tripNumber').value = d.tripNumber;
+      setV('status', d.status);
+      setV('dateChina', d.dateChina);
+      setV('dateDeparture', d.dateDeparture);
+      setV('dateLibya', d.dateLibya);
+      setV('shaheenCode', d.shaheenCode);
+      setV('tripNumber', d.tripNumber);
     } catch(e) {}
   }
 
