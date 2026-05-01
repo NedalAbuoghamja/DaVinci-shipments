@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const bulkProfitPercentInput = document.getElementById('bulkProfitPercent');
   const bulkExtraCostsInput = document.getElementById('bulkExtraCostsInput');
   const applyBulkExtraCostsBtn = document.getElementById('applyBulkExtraCostsBtn');
+  const resetBulkExtraCostsBtn = document.getElementById('resetBulkExtraCostsBtn');
   const sellingPriceLYDInput = document.getElementById('sellingPriceLYD');
   const profitPreview = document.getElementById('profitPreview');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
@@ -633,6 +634,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if(bulkExtraCostsInput) bulkExtraCostsInput.value = '';
       } catch (err) {
         alert('خطأ أثناء التوزيع: ' + err.message);
+      }
+    });
+  }
+
+  // Bulk Reset Extra Costs
+  if (resetBulkExtraCostsBtn) {
+    resetBulkExtraCostsBtn.addEventListener('click', async () => {
+      let visibleShipments = [...shipments];
+      if (statusFilter && statusFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.status === statusFilter.value);
+      if (searchInput && searchInput.value.trim() !== '') {
+        const q = searchInput.value.toLowerCase().trim();
+        visibleShipments = visibleShipments.filter(s => (s.itemName && s.itemName.toLowerCase().includes(q)) || (s.chinaCode && s.chinaCode.toLowerCase().includes(q)));
+      }
+
+      if (visibleShipments.length === 0) return;
+      if (!confirm(`هل أنت متأكد من تصفير (مسح) جميع التكاليف الإضافية لـ ${visibleShipments.length} منتج معروض حالياً؟ لا يمكن التراجع.`)) return;
+
+      const updates = {};
+      visibleShipments.forEach(s => {
+        updates[`${s.id}/additionalCosts`] = 0;
+      });
+
+      try {
+        await update(ref(getDatabase(), 'users/' + currentUserId + '/shipments'), updates);
+        alert('تم تصفير التكاليف بنجاح!');
+      } catch (err) {
+        alert('خطأ أثناء التصفير: ' + err.message);
       }
     });
   }
