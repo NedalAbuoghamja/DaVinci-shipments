@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const seaShippingFields = document.getElementById('seaShippingFields');
   const airShippingFields = document.getElementById('airShippingFields');
   const additionalCostsInput = document.getElementById('additionalCosts');
-  const sellingPriceUSDInput = document.getElementById('sellingPriceUSD');
+  const sellingPriceLYDInput = document.getElementById('sellingPriceLYD');
   const profitPreview = document.getElementById('profitPreview');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
   const shipmentsContainer = document.getElementById('shipmentsContainer');
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
       weightKG: document.getElementById('weightKG').value,
       kgPrice: document.getElementById('kgPrice').value,
       additionalCosts: document.getElementById('additionalCosts').value,
-      sellingPriceUSD: document.getElementById('sellingPriceUSD').value,
+      sellingPriceLYD: document.getElementById('sellingPriceLYD').value,
       shippingType: document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري',
       status: document.getElementById('status').value,
       dateChina: document.getElementById('dateChina').value,
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if(d.weightKG) document.getElementById('weightKG').value = d.weightKG;
       if(d.kgPrice) document.getElementById('kgPrice').value = d.kgPrice;
       if(d.additionalCosts) document.getElementById('additionalCosts').value = d.additionalCosts;
-      if(d.sellingPriceUSD) document.getElementById('sellingPriceUSD').value = d.sellingPriceUSD;
+      if(d.sellingPriceLYD) document.getElementById('sellingPriceLYD').value = d.sellingPriceLYD;
       if(d.shippingType) {
         const radio = document.querySelector(`input[name="shippingType"][value="${d.shippingType}"]`);
         if(radio) {
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const weightKG = parseFloat(weightKGInput.value) || 0;
     const kgPrice = parseFloat(kgPriceInput.value) || 0;
     const additionalCosts = parseFloat(additionalCostsInput.value) || 0;
-    const sellingPriceUSD = parseFloat(sellingPriceUSDInput.value) || 0;
+    const sellingPriceLYD = parseFloat(document.getElementById('sellingPriceLYD').value) || 0;
     const shippingType = document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري';
 
     const imageInput = document.getElementById('itemImage');
@@ -386,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setVal('weightKG', shipment.weightKG || '');
       setVal('kgPrice', shipment.kgPrice || '');
       setVal('additionalCosts', shipment.additionalCosts || '');
-      setVal('sellingPriceUSD', shipment.sellingPriceUSD || '');
+      setVal('sellingPriceLYD', shipment.sellingPriceLYD || '');
       if(shipment.shippingType) {
         const radio = document.querySelector(`input[name="shippingType"][value="${shipment.shippingType}"]`);
         if(radio) {
@@ -465,13 +465,13 @@ document.addEventListener('DOMContentLoaded', () => {
     costPreviewLYD.textContent = `${lyd} د.ل`;
 
     // Profit Preview
-    const sellPrice = parseFloat(sellingPriceUSDInput.value) || 0;
-    if (sellPrice > 0) {
-      const unitCostTotalUSD = totalUsd / (parseInt(quantityInput.value) || 1);
-      const profitUSD = sellPrice - unitCostTotalUSD;
-      const profitLYD = (profitUSD * currentExchangeRate).toFixed(2);
-      const margin = ((profitUSD / sellPrice) * 100).toFixed(1);
-      profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: $${profitUSD.toFixed(2)} (${profitLYD} د.ل) - نسبة: ${margin}%`;
+    const sellPriceLYD = parseFloat(sellingPriceLYDInput.value) || 0;
+    if (sellPriceLYD > 0) {
+      const unitCostTotalLYD = (totalUsd * currentExchangeRate) / (parseInt(quantityInput.value) || 1);
+      const profitLYD = sellPriceLYD - unitCostTotalLYD;
+      const profitUSD = profitLYD / currentExchangeRate;
+      const margin = ((profitLYD / sellPriceLYD) * 100).toFixed(1);
+      profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: ${profitLYD.toFixed(2)} د.ل ($${profitUSD.toFixed(2)}) - نسبة: ${margin}%`;
     } else {
       profitPreview.textContent = '';
     }
@@ -546,8 +546,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const unitCostWithShippingUsd = totalCostUsd / qty;
         const lydCost = totalCostUsd * currentExchangeRate;
 
-        const sellPrice = parseFloat(s.sellingPriceUSD) || 0;
-        const profitPerUnit = sellPrice > 0 ? (sellPrice - unitCostWithShippingUsd) : 0;
+        const sellPriceLYD = parseFloat(s.sellingPriceLYD) || 0;
+        const sellPriceUSD = sellPriceLYD / currentExchangeRate;
+        const profitPerUnit = sellPriceUSD > 0 ? (sellPriceUSD - unitCostWithShippingUsd) : 0;
         const totalProfit = profitPerUnit * qty;
 
         const row = [
@@ -567,9 +568,9 @@ document.addEventListener('DOMContentLoaded', () => {
           s.costUSD.toFixed(2),
           unitCostUsd.toFixed(2),
           unitCostWithShippingUsd.toFixed(2),
-          sellPrice.toFixed(2),
-          profitPerUnit.toFixed(2),
-          totalProfit.toFixed(2),
+          sellPriceLYD.toFixed(2),
+          (profitPerUnit * currentExchangeRate).toFixed(2),
+          (totalProfit * currentExchangeRate).toFixed(2),
           totalCostUsd.toFixed(2),
           lydCost.toFixed(2),
           `"${(s.status || '').replace(/"/g, '""')}"`
@@ -646,7 +647,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const lydCost = (totalCostUsd * currentExchangeRate).toFixed(2);
       const unitCostLyd = (unitCostUsd * currentExchangeRate).toFixed(2);
-      const unitCostWithShippingLyd = (unitCostWithShippingUsd * currentExchangeRate).toFixed(2);
+      const unitCostWithShippingLydNum = unitCostWithShippingUsd * currentExchangeRate;
+      const unitCostWithShippingLyd = unitCostWithShippingLydNum.toFixed(2);
       
       const shipTypeIcon = shipment.shippingType === 'جوي' ? 'fa-plane' : 'fa-ship';
 
@@ -713,19 +715,19 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="lyd" style="font-size: 1.4rem;">${lydCost} د.ل</div>
             </div>
 
-            ${parseFloat(shipment.sellingPriceUSD) > 0 ? `
+            ${parseFloat(shipment.sellingPriceLYD) > 0 ? `
             <div style="margin-top: 10px; padding: 10px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <span style="font-size: 0.9rem; color: var(--text-muted);">سعر البيع للقطعة:</span>
-                <span style="font-weight: 700; color: #10b981;">$${parseFloat(shipment.sellingPriceUSD).toFixed(2)} (${(parseFloat(shipment.sellingPriceUSD) * currentExchangeRate).toFixed(2)} د.ل)</span>
+                <span style="font-weight: 700; color: #10b981;">${parseFloat(shipment.sellingPriceLYD).toFixed(2)} د.ل ($${(parseFloat(shipment.sellingPriceLYD) / currentExchangeRate).toFixed(2)})</span>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 0.9rem; color: var(--text-muted);">صافي ربح القطعة:</span>
-                <span style="font-weight: 700; color: var(--primary-accent);">$${(parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd).toFixed(2)} (${((parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd) * currentExchangeRate).toFixed(2)} د.ل)</span>
+                <span style="font-weight: 700; color: var(--primary-accent);">${(parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum).toFixed(2)} د.ل ($${((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) / currentExchangeRate).toFixed(2)})</span>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; border-top: 1px solid rgba(16, 185, 129, 0.2); padding-top: 5px;">
                 <span style="font-size: 0.9rem; font-weight: bold;">إجمالي الربح المتوقع:</span>
-                <span style="font-size: 1.1rem; font-weight: 800; color: #10b981;">$${((parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd) * qty).toFixed(2)} (${(((parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd) * qty) * currentExchangeRate).toFixed(2)} د.ل)</span>
+                <span style="font-size: 1.1rem; font-weight: 800; color: #10b981;">${((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) * qty).toFixed(2)} د.ل ($${(((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) * qty) / currentExchangeRate).toFixed(2)})</span>
               </div>
             </div>
             ` : ''}
@@ -762,10 +764,11 @@ document.addEventListener('DOMContentLoaded', () => {
       totalExtra += extra;
 
       const totalCostUsd = (parseFloat(s.costUSD) || 0) + shipCost + extra;
-      const sellPrice = parseFloat(s.sellingPriceUSD) || 0;
-      if (sellPrice > 0) {
-        totalSales += sellPrice * qty;
-        totalProfit += (sellPrice * qty) - totalCostUsd;
+      const sellPriceLYD = parseFloat(s.sellingPriceLYD) || 0;
+      if (sellPriceLYD > 0) {
+        const sellPriceUSD = sellPriceLYD / currentExchangeRate;
+        totalSales += sellPriceUSD * qty;
+        totalProfit += (sellPriceUSD * qty) - totalCostUsd;
       }
     });
 
