@@ -27,7 +27,7 @@ let editingShipmentId = null;
 let updateCostPreviewFn = () => {};
 
 // Global edit function
-window.editShipment = function(id) {
+function editShipment(id) {
   console.log("Editing shipment:", id);
   try {
     const shipment = shipments.find(s => s.id === id);
@@ -81,19 +81,19 @@ window.editShipment = function(id) {
     console.error("Edit error:", err);
     alert("حدث خطأ في التعديل: " + err.message);
   }
-};
+}
 
 // Global delete function
-window.deleteShipment = async function(id) {
+async function deleteShipment(id) {
   try {
     if(confirm('هل أنت متأكد من حذف هذه الشحنة نهائياً من جميع الأجهزة؟')) {
-      const itemRef = ref(db, 'users/' + currentUserId + '/shipments/' + id);
+      const itemRef = ref(getDatabase(), 'users/' + currentUserId + '/shipments/' + id);
       await remove(itemRef); // Removes from Firebase Cloud ☁️
     }
   } catch(err) {
     alert("فشل في حذف الشحنة. تأكد من اتصال الإنترنت وحاول تحديث الصفحة: " + err.message);
   }
-};
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('shipmentForm');
@@ -287,6 +287,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Toggle Shipping Fields
   const shippingTypeRadios = document.querySelectorAll('input[name="shippingType"]');
+  // Event Delegation for Edit and Delete
+  if (shipmentsContainer) {
+    shipmentsContainer.addEventListener('click', (e) => {
+      const editBtn = e.target.closest('.action-edit');
+      const deleteBtn = e.target.closest('.action-delete');
+      
+      if (editBtn) {
+        const id = editBtn.getAttribute('data-id');
+        editShipment(id);
+      } else if (deleteBtn) {
+        const id = deleteBtn.getAttribute('data-id');
+        deleteShipment(id);
+      }
+    });
+  }
+
   shippingTypeRadios.forEach(radio => {
     radio.addEventListener('change', (e) => {
       if (e.target.value === 'جوي') {
@@ -694,8 +710,8 @@ document.addEventListener('DOMContentLoaded', () => {
       card.innerHTML = `
         <div class="card-image-holder">
           <div class="card-actions" style="position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; gap: 8px;">
-            <button class="edit-btn" onclick="editShipment('${shipment.id}')" title="تعديل الشحنة" style="background: var(--status-ready); color: white; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"><i class="fa-solid fa-pen"></i></button>
-            <button class="delete-btn" onclick="deleteShipment('${shipment.id}')" title="حذف الشحنة من السحابة" style="background: var(--status-pending); color: white; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: static;"><i class="fa-solid fa-trash"></i></button>
+            <button class="edit-btn action-edit" data-id="${shipment.id}" title="تعديل الشحنة" style="background: var(--status-ready); color: white; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"><i class="fa-solid fa-pen"></i></button>
+            <button class="delete-btn action-delete" data-id="${shipment.id}" title="حذف الشحنة من السحابة" style="background: var(--status-pending); color: white; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: static;"><i class="fa-solid fa-trash"></i></button>
           </div>
           <div class="status-badge" style="color: ${statusColor}; border-color: ${statusColor}">
             ${shipment.status}
