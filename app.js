@@ -551,9 +551,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const unitTotalCostLYD = (totalUsd * currentExchangeRate) / (quantityInput ? (parseInt(quantityInput.value) || 1) : 1);
     
-    // Auto-calculate selling price (Cost + 50%)
+    // Auto-calculate selling price (Cost + 50% - rounded up)
     if (sellingPriceLYDInput && !isSellingPriceManual) {
-      sellingPriceLYDInput.value = (unitTotalCostLYD * 1.5).toFixed(2);
+      sellingPriceLYDInput.value = Math.ceil(unitTotalCostLYD * 1.5);
     }
 
     // Profit Preview
@@ -588,7 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                  : (parseFloat(s.cbmQuantity) || 0) * (parseFloat(s.cbmPrice) || 0);
         const totalCostUsd = (parseFloat(s.costUSD) || 0) + totalShippingUsd + (parseFloat(s.additionalCosts) || 0);
         const unitTotalCostLYD = (totalCostUsd * currentExchangeRate) / qty;
-        const newSellingPriceLYD = (unitTotalCostLYD * multiplier).toFixed(2);
+        const newSellingPriceLYD = Math.ceil(unitTotalCostLYD * multiplier);
         
         updates[`${s.id}/sellingPriceLYD`] = parseFloat(newSellingPriceLYD);
       });
