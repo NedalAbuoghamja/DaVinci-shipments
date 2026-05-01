@@ -641,6 +641,8 @@ document.addEventListener('DOMContentLoaded', () => {
       let csvContent = '\uFEFF' + headers.join(',') + '\n';
       
       toExport.forEach(s => {
+        // Option to exclude personal use from export if needed, but usually export includes all
+        // if (s.status === 'استخدام شخصي') return; 
         const qty = s.quantity || 1;
         const cbm = s.cbmQuantity || 0;
         const cbmp = s.cbmPrice || 0;
@@ -851,8 +853,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0, totalSales = 0, totalProfit = 0, totalQuantity = 0, totalAirQty = 0, totalSeaQty = 0;
 
     filteredList.forEach(s => {
-      // Exclude "Thinking of buying" from totals
-      if (s.status === 'نفكر نشريه') return;
+      // Exclude "Thinking of buying" and "Personal Use" from totals
+      if (s.status === 'نفكر نشريه' || s.status === 'استخدام شخصي') return;
 
       const qty = parseFloat(s.quantity) || 0;
       totalQuantity += qty;
