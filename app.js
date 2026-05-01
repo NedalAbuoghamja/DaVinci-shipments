@@ -389,6 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Global edit function
   window.editShipment = function(id) {
+    console.log("Editing shipment:", id);
     try {
       const shipment = shipments.find(s => s.id === id);
       if (!shipment) { alert('لم يتم العثور على الشحنة!'); return; }
@@ -438,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch(err) {
-      console.error(err);
+      console.error("Edit error:", err);
       alert("حدث خطأ في التعديل: " + err.message);
     }
   };
