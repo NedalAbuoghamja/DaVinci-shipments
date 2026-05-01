@@ -400,9 +400,9 @@ body {
             </div>
 
             <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">
-              <label for="sellingPriceUSD" style="color: #60a5fa;"><i class="fa-solid fa-tag"></i> سعر البيع المقترح للقطعة ($)</label>
-              <input type="number" id="sellingPriceUSD" placeholder="0.00" step="0.01" value="0">
-              <div id="profitPreview"></div>
+              <label for="sellingPriceLYD" style="color: #60a5fa;"><i class="fa-solid fa-tag"></i> سعر البيع المقترح للقطعة (د.ل)</label>
+              <input type="number" id="sellingPriceLYD" placeholder="0.00" step="0.01" value="0">
+              <div id="profitPreview" style="margin-top: 5px; font-size: 0.85rem; font-weight: bold; color: #10b981;"></div>
             </div>
 
             <div class="form-group" style="grid-column: 1 / -1;">
@@ -534,7 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('shipmentForm');
   const globalExchangeRateInput = document.getElementById('globalExchangeRate');
   const costUSDInput = document.getElementById('costUSD');
-  const sellingPriceUSDInput = document.getElementById('sellingPriceUSD');
+  const sellingPriceLYDInput = document.getElementById('sellingPriceLYD');
   const profitPreview = document.getElementById('profitPreview');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
   const shipmentsContainer = document.getElementById('shipmentsContainer');
@@ -591,7 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
       weightKG: parseFloat(document.getElementById('weightKG').value) || 0,
       kgPrice: parseFloat(document.getElementById('kgPrice').value) || 0,
       additionalCosts: parseFloat(document.getElementById('additionalCosts').value) || 0,
-      sellingPriceUSD: parseFloat(sellingPriceUSDInput.value) || 0,
+      sellingPriceLYD: parseFloat(document.getElementById('sellingPriceLYD').value) || 0,
       shippingType: document.querySelector('input[name="shippingType"]:checked').value,
       status: document.getElementById('status').value,
       image: imageBase64,
@@ -618,13 +618,13 @@ document.addEventListener('DOMContentLoaded', () => {
     costPreviewLYD.textContent = `${(total * currentExchangeRate).toFixed(2)} د.ل`;
 
     // Profit Preview
-    const sellPrice = parseFloat(sellingPriceUSDInput.value) || 0;
-    if (sellPrice > 0) {
-      const unitCostTotalUSD = total / qty;
-      const profitUSD = sellPrice - unitCostTotalUSD;
-      const profitLYD = (profitUSD * currentExchangeRate).toFixed(2);
-      const margin = ((profitUSD / sellPrice) * 100).toFixed(1);
-      profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: $${profitUSD.toFixed(2)} (${profitLYD} د.ل) - نسبة: ${margin}%`;
+    const sellPriceLYD = parseFloat(sellingPriceLYDInput.value) || 0;
+    if (sellPriceLYD > 0) {
+      const unitCostTotalLYD = (total * currentExchangeRate) / qty;
+      const profitLYD = sellPriceLYD - unitCostTotalLYD;
+      const profitUSD = profitLYD / currentExchangeRate;
+      const margin = ((profitLYD / sellPriceLYD) * 100).toFixed(1);
+      profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: ${profitLYD.toFixed(2)} د.ل ($${profitUSD.toFixed(2)}) - نسبة: ${margin}%`;
     } else {
       profitPreview.textContent = '';
     }
@@ -647,10 +647,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if(s.shippingType === 'جوي') tsAir += shipCost; else tsSea += shipCost;
         te += (s.additionalCosts || 0);
         
-        const sellPrice = parseFloat(s.sellingPriceUSD) || 0;
-        if (sellPrice > 0) {
-          tSales += sellPrice * qty;
-          tProfit += (sellPrice * qty) - total;
+        const sellPriceLYD = parseFloat(s.sellingPriceLYD) || 0;
+        if (sellPriceLYD > 0) {
+          const sellPriceUSD = sellPriceLYD / currentExchangeRate;
+          tSales += sellPriceUSD * qty;
+          tProfit += (sellPriceUSD * qty) - total;
         }
       }
       
@@ -669,7 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="card-details">
             <p>كود: ${s.chinaCode}</p>
             <p>الشحن: ${s.shippingType} (${s.shippingType === 'جوي' ? s.weightKG + ' KG' : s.cbmQuantity + ' CBM'})</p>
-            ${parseFloat(s.sellingPriceUSD) > 0 ? `<p style="color:#10b981; font-weight:bold;">البيع: $${parseFloat(s.sellingPriceUSD).toFixed(2)}</p>` : ''}
+            ${parseFloat(s.sellingPriceLYD) > 0 ? `<p style="color:#10b981; font-weight:bold;">البيع: ${parseFloat(s.sellingPriceLYD).toFixed(2)} د.ل</p>` : ''}
           </div>
           <div class="card-price">
             <div style="font-size:0.8rem; color:var(--text-muted);">إجمالي التكلفة: $${total.toFixed(2)}</div>

@@ -128,6 +128,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         renderShipments();
       });
+
+      // Sync Exchange Rate from Firebase
+      onValue(ref(db, 'users/' + currentUserId + '/settings/exchangeRate'), (snap) => {
+        const rate = snap.val();
+        if (rate) {
+          currentExchangeRate = parseFloat(rate);
+          if (globalExchangeRateInput) {
+            globalExchangeRateInput.value = currentExchangeRate;
+            updateCostPreview();
+            renderShipments();
+          }
+        }
+      });
     } else {
       currentUserId = null;
       shipmentsRef = null;
@@ -221,8 +234,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Update Exchange Rate globally
   globalExchangeRateInput.addEventListener('input', (e) => {
-    currentExchangeRate = parseFloat(e.target.value) || 0;
-    localStorage.setItem('exchangeRate', currentExchangeRate); // Save preference
+    const newRate = parseFloat(e.target.value) || 0;
+    currentExchangeRate = newRate;
+    localStorage.setItem('exchangeRate', newRate); // Local fallback
+    
+    // Save to Firebase for global sync if logged in
+    if (currentUserId) {
+      update(ref(db, 'users/' + currentUserId + '/settings'), { exchangeRate: newRate });
+    }
+    
     updateCostPreview();
     renderShipments(); // Update all cards
   });
@@ -444,13 +464,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Update LYD label directly
   function updateCostPreview() {
-    const usd = parseFloat(costUSDInput.value) || 0;
+    const usd = costUSDInput ? (parseFloat(costUSDInput.value) || 0) : 0;
     const shipType = document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري';
     let shippingUsd = 0;
     
     if (shipType === 'جوي') {
-      const kg = parseFloat(weightKGInput.value) || 0;
-      const kgP = parseFloat(kgPriceInput.value) || 0;
+      const kg = weightKGInput ? (parseFloat(weightKGInput.value) || 0) : 0;
+      const kgP = kgPriceInput ? (parseFloat(kgPriceInput.value) || 0) : 0;
       shippingUsd = kg * kgP;
     } else {
       const cbmQ = cbmQuantityInput ? (parseFloat(cbmQuantityInput.value) || 0) : 0;
