@@ -159,8 +159,13 @@
                   </div>
                 </div>
 
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label for="totalAdditionalCosts" style="color: var(--status-pending); font-weight: bold;"><i class="fa-solid fa-divide"></i> إجمالي التكاليف الإضافية (يوزع على القطع تلقائياً) ($)</label>
+                  <input type="number" id="totalAdditionalCosts" placeholder="أدخل مبلغ إجمالي ليقسم تلقائياً على الكمية" step="0.01">
+                </div>
+
                 <div class="form-group">
-                  <label for="additionalCosts">تكاليف إضافية ($)</label>
+                  <label for="additionalCosts">تكاليف إضافية (للقطعة الواحدة) ($)</label>
                   <input type="number" id="additionalCosts" placeholder="0.00" step="0.01" value="0">
                 </div>
 
@@ -310,7 +315,11 @@
           <h2><i class="fa-solid fa-cubes"></i> شحناتي الحالية</h2>
           <div style="display: flex; gap: 10px; align-items: center;">
             <button id="selectAllBtn" class="glass-badge" style="cursor: pointer; border: none; font-family: inherit;"><i class="fa-solid fa-check-double"></i> تحديد الكل</button>
-            <button id="applyAutoProfitBtn" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem; background: linear-gradient(135deg, #a855f7, #7c3aed); box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);"><i class="fa-solid fa-magic"></i> تصحيح الأسعار (+50%)</button>
+            <div style="display: flex; gap: 8px; align-items: center; background: rgba(168, 85, 247, 0.1); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(168, 85, 247, 0.3);">
+              <label for="bulkProfitPercent" style="font-size: 0.8rem; font-weight: bold; color: white;">نسبة الربح %:</label>
+              <input type="number" id="bulkProfitPercent" value="50" min="1" style="width: 50px; padding: 4px; border-radius: 6px; border: 1px solid var(--primary-accent); background: var(--bg-dark); color: white; text-align: center; font-size: 0.85rem;">
+              <button id="applyAutoProfitBtn" class="btn-primary" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: linear-gradient(135deg, #a855f7, #7c3aed); border: none; cursor: pointer;"><i class="fa-solid fa-magic"></i> تصحيح الكل</button>
+            </div>
             <button id="exportExcelBtn" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-file-excel"></i> تصدير المحددة</button>
             <div class="stats glass-badge">إجمالي شحناتك: <span id="totalShipmentsCount">0</span></div>
           </div>
@@ -344,6 +353,6 @@
     </main>
   </div>
 
-  <script type="module" src="app.js?v=20"></script>
+  <script type="module" src="app.js?v=21"></script>
 </body>
 </html>

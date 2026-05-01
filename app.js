@@ -109,6 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const seaShippingFields = document.getElementById('seaShippingFields');
   const airShippingFields = document.getElementById('airShippingFields');
   const additionalCostsInput = document.getElementById('additionalCosts');
+  const totalAdditionalCostsInput = document.getElementById('totalAdditionalCosts');
+  const bulkProfitPercentInput = document.getElementById('bulkProfitPercent');
   const sellingPriceLYDInput = document.getElementById('sellingPriceLYD');
   const profitPreview = document.getElementById('profitPreview');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
@@ -285,6 +287,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if(weightKGInput) weightKGInput.addEventListener('input', updateCostPreview);
   if(kgPriceInput) kgPriceInput.addEventListener('input', updateCostPreview);
   if(additionalCostsInput) additionalCostsInput.addEventListener('input', updateCostPreview);
+  if(totalAdditionalCostsInput) {
+    totalAdditionalCostsInput.addEventListener('input', (e) => {
+      const totalExtra = parseFloat(e.target.value) || 0;
+      const qty = parseInt(quantityInput?.value) || 1;
+      if (additionalCostsInput) {
+        additionalCostsInput.value = (totalExtra / qty).toFixed(2);
+      }
+      updateCostPreview();
+    });
+  }
   if(sellingPriceLYDInput) {
     sellingPriceLYDInput.addEventListener('input', () => {
       isSellingPriceManual = true;
@@ -567,29 +579,31 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCostPreviewFn = updateCostPreview;
 
 
-  // Bulk Apply 50% Profit to all existing shipments
-  const applyAutoProfitBtn = document.getElementById('applyAutoProfitBtn');
+  // Bulk Apply Profit to all existing shipments
   if (applyAutoProfitBtn) {
     applyAutoProfitBtn.addEventListener('click', async () => {
       if (shipments.length === 0) return;
-      if (!confirm('هل أنت متأكد من تحديث أسعار البيع لجميع الشحنات المسجلة حالياً لتكون بتكلفة + 50% ربح؟ سيتم الكتابة فوق الأسعار القديمة.')) return;
+      const profitPercent = parseFloat(bulkProfitPercentInput?.value) || 50;
+      if (!confirm(`هل أنت متأكد من تحديث أسعار البيع لجميع الشحنات المسجلة حالياً لتكون بتكلفة + ${profitPercent}% ربح؟ سيتم الكتابة فوق الأسعار القديمة.`)) return;
 
       const updates = {};
+      const multiplier = 1 + (profitPercent / 100);
+
       shipments.forEach(s => {
         const qty = s.quantity || 1;
         const totalShippingUsd = s.shippingType === 'جوي' 
                                  ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
                                  : (parseFloat(s.cbmQuantity) || 0) * (parseFloat(s.cbmPrice) || 0);
-        const totalCostUsd = s.costUSD + totalShippingUsd + (parseFloat(s.additionalCosts) || 0);
+        const totalCostUsd = (parseFloat(s.costUSD) || 0) + totalShippingUsd + (parseFloat(s.additionalCosts) || 0);
         const unitTotalCostLYD = (totalCostUsd * currentExchangeRate) / qty;
-        const newSellingPriceLYD = (unitTotalCostLYD * 1.5).toFixed(2);
+        const newSellingPriceLYD = (unitTotalCostLYD * multiplier).toFixed(2);
         
         updates[`${s.id}/sellingPriceLYD`] = parseFloat(newSellingPriceLYD);
       });
 
       try {
         await update(ref(db, 'users/' + currentUserId + '/shipments'), updates);
-        alert('تم تحديث جميع أسعار المنتجات المسجلة بنسبة ربح 50% بنجاح!');
+        alert(`تم تحديث جميع أسعار المنتجات المسجلة بنسبة ربح ${profitPercent}% بنجاح!`);
       } catch (err) {
         alert('خطأ أثناء التحديث: ' + err.message);
       }
