@@ -613,17 +613,20 @@ document.addEventListener('DOMContentLoaded', () => {
         visibleShipments = visibleShipments.filter(s => (s.itemName && s.itemName.toLowerCase().includes(q)) || (s.chinaCode && s.chinaCode.toLowerCase().includes(q)));
       }
 
-      if (visibleShipments.length === 0) { alert('لا توجد شحنات معروضة لتوزيع التكاليف عليها!'); return; }
+      // Filter out Personal Use items from the distribution
+      const businessShipments = visibleShipments.filter(s => s.status !== 'استخدام شخصي');
+
+      if (businessShipments.length === 0) { alert('لا توجد شحنات (تجارية) معروضة لتوزيع التكاليف عليها!'); return; }
 
       const totalAmount = parseFloat(bulkExtraCostsInput?.value) || 0;
       if (totalAmount <= 0) { alert('يرجى إدخال مبلغ صحيح للتوزيع.'); return; }
 
-      const sharePerProduct = totalAmount / visibleShipments.length;
+      const sharePerProduct = totalAmount / businessShipments.length;
       
-      if (!confirm(`سيتم توزيع مبلغ $${totalAmount} على ${visibleShipments.length} منتج معروض حالياً. نصيب كل منتج (شحنة) هو $${sharePerProduct.toFixed(2)}. هل تريد الاستمرار؟`)) return;
+      if (!confirm(`سيتم توزيع مبلغ $${totalAmount} على ${businessShipments.length} منتج تجاري (تم استبعاد الشخصي). نصيب كل منتج هو $${sharePerProduct.toFixed(2)}. هل تريد الاستمرار؟`)) return;
 
       const updates = {};
-      visibleShipments.forEach(s => {
+      businessShipments.forEach(s => {
         const currentExtra = parseFloat(s.additionalCosts) || 0;
         updates[`${s.id}/additionalCosts`] = currentExtra + sharePerProduct;
       });
