@@ -109,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const seaShippingFields = document.getElementById('seaShippingFields');
   const airShippingFields = document.getElementById('airShippingFields');
   const additionalCostsInput = document.getElementById('additionalCosts');
-  const totalAdditionalCostsInput = document.getElementById('totalAdditionalCosts');
   const bulkProfitPercentInput = document.getElementById('bulkProfitPercent');
   const sellingPriceLYDInput = document.getElementById('sellingPriceLYD');
   const profitPreview = document.getElementById('profitPreview');
@@ -287,16 +286,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if(weightKGInput) weightKGInput.addEventListener('input', updateCostPreview);
   if(kgPriceInput) kgPriceInput.addEventListener('input', updateCostPreview);
   if(additionalCostsInput) additionalCostsInput.addEventListener('input', updateCostPreview);
-  if(totalAdditionalCostsInput) {
-    totalAdditionalCostsInput.addEventListener('input', (e) => {
-      const totalExtra = parseFloat(e.target.value) || 0;
-      const qty = parseInt(quantityInput?.value) || 1;
-      if (additionalCostsInput) {
-        additionalCostsInput.value = (totalExtra / qty).toFixed(2);
-      }
-      updateCostPreview();
-    });
-  }
   if(sellingPriceLYDInput) {
     sellingPriceLYDInput.addEventListener('input', () => {
       isSellingPriceManual = true;
