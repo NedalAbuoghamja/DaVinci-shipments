@@ -22,6 +22,7 @@ let currentUserId = null;
 let shipments = [];
 let currentExchangeRate = 7.00;
 let editingShipmentId = null;
+let isSellingPriceManual = false;
 
 // Helper to update cost preview (forward declaration)
 let updateCostPreviewFn = () => {};
@@ -34,6 +35,7 @@ function editShipment(id) {
     if (!shipment) { alert('لم يتم العثور على الشحنة!'); return; }
 
     editingShipmentId = id;
+    isSellingPriceManual = true; // Don't overwrite existing price when editing
     
     // Populate form safely
     const setVal = (elmId, val) => { const el = document.getElementById(elmId); if (el) el.value = val; };
@@ -283,7 +285,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if(weightKGInput) weightKGInput.addEventListener('input', updateCostPreview);
   if(kgPriceInput) kgPriceInput.addEventListener('input', updateCostPreview);
   if(additionalCostsInput) additionalCostsInput.addEventListener('input', updateCostPreview);
-  if(sellingPriceLYDInput) sellingPriceLYDInput.addEventListener('input', updateCostPreview);
+  if(sellingPriceLYDInput) {
+    sellingPriceLYDInput.addEventListener('input', () => {
+      isSellingPriceManual = true;
+      updateCostPreview();
+    });
+  }
 
   // Toggle Shipping Fields
   const shippingTypeRadios = document.querySelectorAll('input[name="shippingType"]');
@@ -485,6 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       if(shipmentsRef) push(shipmentsRef, newShipment);
       form.reset();
+      isSellingPriceManual = false;
       localStorage.removeItem('shipmentDraft'); // Clear draft after successful creation
       updateCostPreview();
     }
@@ -493,6 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('cancelEditBtn').addEventListener('click', () => {
     editingShipmentId = null;
+    isSellingPriceManual = false;
     form.reset();
     loadFormDraft();
     const submitBtn = document.getElementById('submitBtn');
@@ -535,6 +544,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const lyd = (totalUsd * currentExchangeRate).toFixed(2);
     if (costPreviewLYD) costPreviewLYD.textContent = `${lyd} د.ل`;
+
+    const unitTotalCostLYD = (totalUsd * currentExchangeRate) / (quantityInput ? (parseInt(quantityInput.value) || 1) : 1);
+    
+    // Auto-calculate selling price (Cost + 50%)
+    if (sellingPriceLYDInput && !isSellingPriceManual) {
+      sellingPriceLYDInput.value = (unitTotalCostLYD * 1.5).toFixed(2);
+    }
 
     // Profit Preview
     const sellPriceLYD = sellingPriceLYDInput ? (parseFloat(sellingPriceLYDInput.value) || 0) : 0;
