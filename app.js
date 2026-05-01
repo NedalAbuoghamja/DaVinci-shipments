@@ -110,6 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const airShippingFields = document.getElementById('airShippingFields');
   const additionalCostsInput = document.getElementById('additionalCosts');
   const bulkProfitPercentInput = document.getElementById('bulkProfitPercent');
+  const bulkExtraCostsInput = document.getElementById('bulkExtraCostsInput');
+  const applyBulkExtraCostsBtn = document.getElementById('applyBulkExtraCostsBtn');
   const sellingPriceLYDInput = document.getElementById('sellingPriceLYD');
   const profitPreview = document.getElementById('profitPreview');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
@@ -595,6 +597,42 @@ document.addEventListener('DOMContentLoaded', () => {
         alert(`تم تحديث جميع أسعار المنتجات المسجلة بنسبة ربح ${profitPercent}% بنجاح!`);
       } catch (err) {
         alert('خطأ أثناء التحديث: ' + err.message);
+      }
+    });
+  }
+
+  // Bulk Distribute Extra Costs to displayed shipments
+  if (applyBulkExtraCostsBtn) {
+    applyBulkExtraCostsBtn.addEventListener('click', async () => {
+      // Get the currently filtered shipments (what's visible)
+      let visibleShipments = [...shipments];
+      if (statusFilter && statusFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.status === statusFilter.value);
+      if (searchInput && searchInput.value.trim() !== '') {
+        const q = searchInput.value.toLowerCase().trim();
+        visibleShipments = visibleShipments.filter(s => (s.itemName && s.itemName.toLowerCase().includes(q)) || (s.chinaCode && s.chinaCode.toLowerCase().includes(q)));
+      }
+
+      if (visibleShipments.length === 0) { alert('لا توجد شحنات معروضة لتوزيع التكاليف عليها!'); return; }
+
+      const totalAmount = parseFloat(bulkExtraCostsInput?.value) || 0;
+      if (totalAmount <= 0) { alert('يرجى إدخال مبلغ صحيح للتوزيع.'); return; }
+
+      const sharePerProduct = totalAmount / visibleShipments.length;
+      
+      if (!confirm(`سيتم توزيع مبلغ $${totalAmount} على ${visibleShipments.length} منتج معروض حالياً. نصيب كل منتج (شحنة) هو $${sharePerProduct.toFixed(2)}. هل تريد الاستمرار؟`)) return;
+
+      const updates = {};
+      visibleShipments.forEach(s => {
+        const currentExtra = parseFloat(s.additionalCosts) || 0;
+        updates[`${s.id}/additionalCosts`] = currentExtra + sharePerProduct;
+      });
+
+      try {
+        await update(ref(getDatabase(), 'users/' + currentUserId + '/shipments'), updates);
+        alert('تم توزيع التكاليف الإضافية بنجاح على جميع المنتجات المعروضة!');
+        if(bulkExtraCostsInput) bulkExtraCostsInput.value = '';
+      } catch (err) {
+        alert('خطأ أثناء التوزيع: ' + err.message);
       }
     });
   }

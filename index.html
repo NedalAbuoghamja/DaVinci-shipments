@@ -324,6 +324,11 @@
           <div class="form-group" style="flex: 2; min-width: 250px;">
             <input type="text" id="searchInput" placeholder="بحث بالاسم، كود الصين، كود التتبع، كود الشاهين..." style="width: 100%;">
           </div>
+          <div style="display: flex; gap: 8px; align-items: center; background: rgba(245, 158, 11, 0.1); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.3); flex: 1; min-width: 250px;">
+            <label for="bulkExtraCostsInput" style="font-size: 0.8rem; font-weight: bold; color: #f59e0b; white-space: nowrap;">توزيع تكاليف ($):</label>
+            <input type="number" id="bulkExtraCostsInput" placeholder="مبلغ يوزع عالكل" style="width: 80px; padding: 4px; border-radius: 6px; border: 1px solid #f59e0b; background: var(--bg-dark); color: white; text-align: center; font-size: 0.85rem;">
+            <button id="applyBulkExtraCostsBtn" class="btn-primary" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: #f59e0b; border: none; cursor: pointer; color: black; font-weight: bold; border-radius: 6px;"><i class="fa-solid fa-divide"></i> توزيع</button>
+          </div>
           <div class="form-group" style="flex: 1; min-width: 200px;">
             <select id="statusFilter" style="width: 100%;">
               <option value="الكل">جميع الحالات</option>
@@ -348,6 +353,6 @@
     </main>
   </div>
 
-  <script type="module" src="app.js?v=22"></script>
+  <script type="module" src="app.js?v=23"></script>
 </body>
 </html>
