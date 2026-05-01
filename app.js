@@ -298,21 +298,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const status = document.getElementById('status').value;
     
     // Dates
-    const dateChina = document.getElementById('dateChina').value;
-    const dateDeparture = document.getElementById('dateDeparture').value;
-    const dateLibya = document.getElementById('dateLibya').value;
+    const dateChina = document.getElementById('dateChina')?.value || '';
+    const dateDeparture = document.getElementById('dateDeparture')?.value || '';
+    const dateLibya = document.getElementById('dateLibya')?.value || '';
 
     // Al-Shaheen info
-    const shaheenCode = document.getElementById('shaheenCode').value;
-    const tripNumber = document.getElementById('tripNumber').value;
+    const shaheenCode = document.getElementById('shaheenCode')?.value || '';
+    const tripNumber = document.getElementById('tripNumber')?.value || '';
 
-    const quantity = parseInt(quantityInput.value) || 1;
-    const cbmQuantity = parseFloat(cbmQuantityInput.value) || 0;
-    const cbmPrice = parseFloat(cbmPriceInput.value) || 0;
-    const weightKG = parseFloat(weightKGInput.value) || 0;
-    const kgPrice = parseFloat(kgPriceInput.value) || 0;
-    const additionalCosts = parseFloat(additionalCostsInput.value) || 0;
-    const sellingPriceLYD = parseFloat(document.getElementById('sellingPriceLYD').value) || 0;
+    const quantity = quantityInput ? (parseInt(quantityInput.value) || 1) : 1;
+    const cbmQuantity = cbmQuantityInput ? (parseFloat(cbmQuantityInput.value) || 0) : 0;
+    const cbmPrice = cbmPriceInput ? (parseFloat(cbmPriceInput.value) || 0) : 0;
+    const weightKG = weightKGInput ? (parseFloat(weightKGInput.value) || 0) : 0;
+    const kgPrice = kgPriceInput ? (parseFloat(kgPriceInput.value) || 0) : 0;
+    const additionalCosts = additionalCostsInput ? (parseFloat(additionalCostsInput.value) || 0) : 0;
+    const sellingPriceLYD = document.getElementById('sellingPriceLYD') ? (parseFloat(document.getElementById('sellingPriceLYD').value) || 0) : 0;
     const shippingType = document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري';
 
     const imageInput = document.getElementById('itemImage');
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
       weightKG,
       kgPrice,
       additionalCosts,
-      sellingPriceUSD,
+      sellingPriceLYD,
       shippingType,
       image: imageBase64,
       createdAt: new Date().toLocaleDateString('ar-LY'),
@@ -464,18 +464,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalUsd = usd + shippingUsd + addCosts;
 
     const lyd = (totalUsd * currentExchangeRate).toFixed(2);
-    costPreviewLYD.textContent = `${lyd} د.ل`;
+    if (costPreviewLYD) costPreviewLYD.textContent = `${lyd} د.ل`;
 
     // Profit Preview
-    const sellPriceLYD = parseFloat(sellingPriceLYDInput.value) || 0;
-    if (sellPriceLYD > 0) {
+    const sellPriceLYD = sellingPriceLYDInput ? (parseFloat(sellingPriceLYDInput.value) || 0) : 0;
+    if (sellPriceLYD > 0 && quantityInput) {
       const unitCostTotalLYD = (totalUsd * currentExchangeRate) / (parseInt(quantityInput.value) || 1);
       const profitLYD = sellPriceLYD - unitCostTotalLYD;
       const profitUSD = profitLYD / currentExchangeRate;
       const margin = ((profitLYD / sellPriceLYD) * 100).toFixed(1);
-      profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: ${profitLYD.toFixed(2)} د.ل ($${profitUSD.toFixed(2)}) - نسبة: ${margin}%`;
+      if (profitPreview) profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: ${profitLYD.toFixed(2)} د.ل ($${profitUSD.toFixed(2)}) - نسبة: ${margin}%`;
     } else {
-      profitPreview.textContent = '';
+      if (profitPreview) profitPreview.textContent = '';
     }
   }
 
