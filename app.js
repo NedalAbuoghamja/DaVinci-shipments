@@ -142,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Search & Filter
   const searchInput = document.getElementById('searchInput');
   const statusFilter = document.getElementById('statusFilter');
+  const shippingTypeFilter = document.getElementById('shippingTypeFilter');
 
   // Load user's preferred exchange rate from LocalStorage
   currentExchangeRate = parseFloat(localStorage.getItem('exchangeRate')) || 7.00;
@@ -330,6 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Search and filter listeners
   if(searchInput) searchInput.addEventListener('input', renderShipments);
   if(statusFilter) statusFilter.addEventListener('change', renderShipments);
+  if(shippingTypeFilter) shippingTypeFilter.addEventListener('change', renderShipments);
 
   // Update Exchange Rate globally
   globalExchangeRateInput.addEventListener('input', (e) => {
@@ -608,6 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Get the currently filtered shipments (what's visible)
       let visibleShipments = [...shipments];
       if (statusFilter && statusFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.status === statusFilter.value);
+      if (shippingTypeFilter && shippingTypeFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.shippingType === shippingTypeFilter.value);
       if (searchInput && searchInput.value.trim() !== '') {
         const q = searchInput.value.toLowerCase().trim();
         visibleShipments = visibleShipments.filter(s => (s.itemName && s.itemName.toLowerCase().includes(q)) || (s.chinaCode && s.chinaCode.toLowerCase().includes(q)));
@@ -646,6 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetBulkExtraCostsBtn.addEventListener('click', async () => {
       let visibleShipments = [...shipments];
       if (statusFilter && statusFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.status === statusFilter.value);
+      if (shippingTypeFilter && shippingTypeFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.shippingType === shippingTypeFilter.value);
       if (searchInput && searchInput.value.trim() !== '') {
         const q = searchInput.value.toLowerCase().trim();
         visibleShipments = visibleShipments.filter(s => (s.itemName && s.itemName.toLowerCase().includes(q)) || (s.chinaCode && s.chinaCode.toLowerCase().includes(q)));
@@ -680,6 +684,9 @@ document.addEventListener('DOMContentLoaded', () => {
       let toExport = shipments;
       if (statusFilter && statusFilter.value !== 'الكل') {
         toExport = toExport.filter(s => s.status === statusFilter.value);
+      }
+      if (shippingTypeFilter && shippingTypeFilter.value !== 'الكل') {
+        toExport = toExport.filter(s => s.shippingType === shippingTypeFilter.value);
       }
       if (searchInput && searchInput.value.trim() !== '') {
         const q = searchInput.value.toLowerCase().trim();
@@ -792,6 +799,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Apply Status Filter
     if (statusFilter && statusFilter.value !== 'الكل') {
       filteredShipments = filteredShipments.filter(s => s.status === statusFilter.value);
+    }
+    
+    // Apply Shipping Type Filter
+    if (shippingTypeFilter && shippingTypeFilter.value !== 'الكل') {
+      filteredShipments = filteredShipments.filter(s => s.shippingType === shippingTypeFilter.value);
     }
     
     // Apply Search

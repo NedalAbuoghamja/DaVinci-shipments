@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منظومة إدارة الشحنات الذكية | v28</title>
+  <title>منظومة إدارة الشحنات الذكية | v28.1</title>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -330,6 +330,13 @@
             <button id="applyBulkExtraCostsBtn" class="btn-primary" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: #f59e0b; border: none; cursor: pointer; color: black; font-weight: bold; border-radius: 6px;"><i class="fa-solid fa-divide"></i> توزيع</button>
             <button id="resetBulkExtraCostsBtn" class="btn-primary" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: #ef4444; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 6px;"><i class="fa-solid fa-trash-can"></i> تصفير</button>
           </div>
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <select id="shippingTypeFilter" style="width: 100%;">
+              <option value="الكل">جميع أنواع الشحن</option>
+              <option value="جوي">شحن جوي</option>
+              <option value="بحري">شحن بحري</option>
+            </select>
+          </div>
           <div class="form-group" style="flex: 1; min-width: 200px;">
             <select id="statusFilter" style="width: 100%;">
               <option value="الكل">جميع الحالات</option>
@@ -354,6 +361,6 @@
     </main>
   </div>
 
-  <script type="module" src="app.js?v=28"></script>
+  <script type="module" src="app.js?v=29_SHIPPING_FILTER"></script>
 </body>
 </html>
