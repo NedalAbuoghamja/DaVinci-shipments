@@ -320,26 +320,20 @@
           </div>
         </div>
 
-        <div class="search-filter-container glass-panel" style="margin-bottom: 2rem; padding: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; border-radius: 12px;">
+        <div class="search-filter-container glass-panel" style="margin-bottom: 2rem; padding: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; border-radius: 12px; align-items: center;">
           <div class="form-group" style="flex: 2; min-width: 250px;">
             <input type="text" id="searchInput" placeholder="بحث بالاسم، كود الصين، كود التتبع، كود الشاهين..." style="width: 100%;">
           </div>
-          <div style="display: flex; gap: 8px; align-items: center; background: rgba(245, 158, 11, 0.1); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.3); flex: 1; min-width: 250px;">
-            <label for="bulkExtraCostsInput" style="font-size: 0.8rem; font-weight: bold; color: #f59e0b; white-space: nowrap;">توزيع تكاليف ($):</label>
-            <input type="number" id="bulkExtraCostsInput" placeholder="مبلغ يوزع عالكل" style="width: 80px; padding: 4px; border-radius: 6px; border: 1px solid #f59e0b; background: var(--bg-dark); color: white; text-align: center; font-size: 0.85rem;">
-            <button id="applyBulkExtraCostsBtn" class="btn-primary" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: #f59e0b; border: none; cursor: pointer; color: black; font-weight: bold; border-radius: 6px;"><i class="fa-solid fa-divide"></i> توزيع</button>
-            <button id="resetBulkExtraCostsBtn" class="btn-primary" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: #ef4444; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 6px;"><i class="fa-solid fa-trash-can"></i> تصفير</button>
-          </div>
           <div class="form-group" style="flex: 1; min-width: 150px;">
             <select id="shippingTypeFilter" style="width: 100%;">
-              <option value="الكل">جميع أنواع الشحن</option>
+              <option value="الكل" selected>جميع أنواع الشحن</option>
               <option value="جوي">شحن جوي</option>
               <option value="بحري">شحن بحري</option>
             </select>
           </div>
           <div class="form-group" style="flex: 1; min-width: 200px;">
             <select id="statusFilter" style="width: 100%;">
-              <option value="الكل">جميع الحالات</option>
+              <option value="الكل" selected>جميع الحالات</option>
               <option value="تم الطلب وفي انتظار التجهيز">تم الطلب وفي انتظار التجهيز</option>
               <option value="نفكر نشريه">نفكر نشريه (قيد الدراسة)</option>
               <option value="استخدام شخصي">استخدام شخصي (خارج الحسبة)</option>
@@ -352,6 +346,12 @@
               <option value="تم الاستلام">تم الاستلام ✅</option>
             </select>
           </div>
+          <div style="display: flex; gap: 8px; align-items: center; background: rgba(245, 158, 11, 0.1); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.3); flex: 2; min-width: 320px; flex-wrap: wrap; justify-content: center;">
+            <label for="bulkExtraCostsInput" style="font-size: 0.8rem; font-weight: bold; color: #f59e0b; white-space: nowrap;">توزيع تكاليف ($):</label>
+            <input type="number" id="bulkExtraCostsInput" placeholder="مبلغ يوزع" style="width: 80px; padding: 4px; border-radius: 6px; border: 1px solid #f59e0b; background: var(--bg-dark); color: white; text-align: center; font-size: 0.85rem;">
+            <button id="applyBulkExtraCostsBtn" class="btn-primary" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: #f59e0b; border: none; cursor: pointer; color: black; font-weight: bold; border-radius: 6px;"><i class="fa-solid fa-divide"></i> توزيع</button>
+            <button id="resetBulkExtraCostsBtn" class="btn-primary" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: #ef4444; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 6px;"><i class="fa-solid fa-trash-can"></i> تصفير</button>
+          </div>
         </div>
         
         <div class="shipments-grid" id="shipmentsContainer">
@@ -361,6 +361,6 @@
     </main>
   </div>
 
-  <script type="module" src="app.js?v=29_SHIPPING_FILTER"></script>
+  <script type="module" src="app.js?v=30_SHIPPING_FILTER_FIX"></script>
 </body>
 </html>
