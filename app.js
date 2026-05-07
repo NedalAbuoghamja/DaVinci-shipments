@@ -329,7 +329,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Search and filter listeners
-  if(searchInput) searchInput.addEventListener('input', renderShipments);
+  let searchTimeout;
+  if(searchInput) {
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(renderShipments, 300);
+    });
+  }
   if(statusFilter) statusFilter.addEventListener('change', renderShipments);
   if(shippingTypeFilter) shippingTypeFilter.addEventListener('change', renderShipments);
 
@@ -826,6 +832,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Sort newest first
+    const fragment = document.createDocumentFragment();
+
     filteredShipments.sort((a,b) => b.timestamp - a.timestamp).forEach(shipment => {
       const qty = shipment.quantity || 1;
       const cbm = shipment.cbmQuantity || 0;
@@ -927,8 +935,10 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
       `;
-      shipmentsContainer.appendChild(card);
+      fragment.appendChild(card);
     });
+
+    shipmentsContainer.appendChild(fragment);
 
     updateFinancialSummary(filteredShipments);
   }
