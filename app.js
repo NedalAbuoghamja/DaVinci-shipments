@@ -852,7 +852,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (shipment.status.includes('جاهزة') || shipment.status.includes('الاستلام')) statusColor = 'var(--status-ready)';
 
       const card = document.createElement('div');
-      card.className = 'shipment-card fade-in';
+      card.className = 'shipment-card';
       card.innerHTML = `
         <div class="card-image-holder">
           <div class="card-actions" style="position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; gap: 8px;">
