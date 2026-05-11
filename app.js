@@ -206,6 +206,9 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         renderShipments();
+      }, (error) => {
+        console.error("Firebase fetch error:", error);
+        alert("حدث خطأ في جلب الشحنات من قاعدة البيانات. قد يكون هناك مشكلة في الاتصال أو استنفاد للباقة: " + error.message);
       });
 
       // Sync Exchange Rate from Firebase
@@ -854,10 +857,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const shipTypeIcon = shipment.shippingType === 'جوي' ? 'fa-plane' : 'fa-ship';
 
       let statusColor = 'var(--status-transit)';
-      if (shipment.status.includes('تم الطلب')) statusColor = 'var(--status-pending)';
-      if (shipment.status.includes('نفكر نشريه')) statusColor = '#a855f7'; // Purple for planning
-      if (shipment.status.includes('الجمارك') || shipment.status.includes('رايحة')) statusColor = 'var(--status-customs)'; // red color
-      if (shipment.status.includes('جاهزة') || shipment.status.includes('الاستلام')) statusColor = 'var(--status-ready)';
+      if (shipment.status?.includes('تم الطلب')) statusColor = 'var(--status-pending)';
+      if (shipment.status?.includes('نفكر نشريه')) statusColor = '#a855f7'; // Purple for planning
+      if (shipment.status?.includes('الجمارك') || shipment.status?.includes('رايحة')) statusColor = 'var(--status-customs)'; // red color
+      if (shipment.status?.includes('جاهزة') || shipment.status?.includes('الاستلام')) statusColor = 'var(--status-ready)';
 
       const card = document.createElement('div');
       card.className = 'shipment-card';
