@@ -18,13 +18,16 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 let shipmentsRef = null;
 let expensesRef = null;
+let salesRef = null;
 let currentUserId = null;
 
 let shipments = [];
 let expenses = [];
+let sales = [];
 let currentExchangeRate = 7.00;
 let editingShipmentId = null;
 let editingExpenseId = null;
+let editingSaleId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('shipmentForm');
@@ -115,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       shipmentsRef = ref(db, 'users/' + currentUserId + '/shipments');
       expensesRef = ref(db, 'users/' + currentUserId + '/expenses');
+      salesRef = ref(db, 'users/' + currentUserId + '/sales');
       if (authOverlay) authOverlay.classList.add('hidden');
       if (appContainer) appContainer.style.display = 'block';
 
@@ -140,18 +144,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (typeof renderExpenses === 'function') renderExpenses();
       });
+
+      onValue(salesRef, (snapshot) => {
+        const data = snapshot.val();
+        sales = [];
+        if (data) {
+          for (let key in data) {
+            sales.push({ id: key, ...data[key] });
+          }
+        }
+        if (typeof renderSales === 'function') renderSales();
+      });
     } else {
       currentUserId = null;
       shipmentsRef = null;
       expensesRef = null;
+      salesRef = null;
       shipments = [];
       expenses = [];
+      sales = [];
       renderShipments();
       if (typeof renderExpenses === 'function') renderExpenses();
+      if (typeof renderSales === 'function') renderSales();
       if (authOverlay) authOverlay.classList.remove('hidden');
       if (appContainer) appContainer.style.display = 'none';
       if (document.getElementById('cancelEditBtn')) document.getElementById('cancelEditBtn').click();
       if (document.getElementById('cancelExpenseEditBtn')) document.getElementById('cancelExpenseEditBtn').click();
+      if (document.getElementById('cancelSaleEditBtn')) document.getElementById('cancelSaleEditBtn').click();
     }
   });
 
@@ -249,6 +268,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const usd = parseFloat(expenseAmountUSDInput.value);
         if(!isNaN(usd)) {
           expenseAmountLYDInput.value = (usd * currentExchangeRate).toFixed(2);
+        }
+      }
+    }
+    if (typeof renderSales === 'function') {
+      renderSales();
+      const saleAmountUSDInput = document.getElementById('salePriceUSD');
+      const saleAmountLYDInput = document.getElementById('salePriceLYD');
+      if(saleAmountUSDInput && saleAmountLYDInput) {
+        const usd = parseFloat(saleAmountUSDInput.value);
+        if(!isNaN(usd)) {
+          saleAmountLYDInput.value = (usd * currentExchangeRate).toFixed(2);
         }
       }
     }
@@ -958,32 +988,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Tabs Logic ---
     const tabShipments = document.getElementById('tabShipments');
     const tabExpenses = document.getElementById('tabExpenses');
+    const tabSales = document.getElementById('tabSales');
     const shipmentsView = document.getElementById('shipmentsView');
     const expensesView = document.getElementById('expensesView');
+    const salesView = document.getElementById('salesView');
 
-    if (tabShipments && tabExpenses) {
-      tabShipments.addEventListener('click', () => {
-        tabShipments.classList.add('active');
-        tabShipments.style.color = 'var(--primary-accent)';
-        tabShipments.style.borderBottomColor = 'var(--primary-accent)';
-        tabExpenses.classList.remove('active');
-        tabExpenses.style.color = 'var(--text-muted)';
-        tabExpenses.style.borderBottomColor = 'transparent';
-        shipmentsView.classList.remove('hidden');
-        expensesView.classList.add('hidden');
+    function switchTab(activeTab, activeView) {
+      [tabShipments, tabExpenses, tabSales].forEach(t => {
+        if(t) {
+          t.classList.remove('active');
+          t.style.color = 'var(--text-muted)';
+          t.style.borderBottomColor = 'transparent';
+        }
+      });
+      [shipmentsView, expensesView, salesView].forEach(v => {
+        if(v) v.classList.add('hidden');
       });
 
-      tabExpenses.addEventListener('click', () => {
-        tabExpenses.classList.add('active');
-        tabExpenses.style.color = 'var(--primary-accent)';
-        tabExpenses.style.borderBottomColor = 'var(--primary-accent)';
-        tabShipments.classList.remove('active');
-        tabShipments.style.color = 'var(--text-muted)';
-        tabShipments.style.borderBottomColor = 'transparent';
-        expensesView.classList.remove('hidden');
-        shipmentsView.classList.add('hidden');
-      });
+      if(activeTab) {
+        activeTab.classList.add('active');
+        activeTab.style.color = 'var(--primary-accent)';
+        activeTab.style.borderBottomColor = 'var(--primary-accent)';
+      }
+      if(activeView) activeView.classList.remove('hidden');
     }
+
+    if (tabShipments) tabShipments.addEventListener('click', () => switchTab(tabShipments, shipmentsView));
+    if (tabExpenses) tabExpenses.addEventListener('click', () => switchTab(tabExpenses, expensesView));
+    if (tabSales) tabSales.addEventListener('click', () => switchTab(tabSales, salesView));
 
     // --- Expenses Logic ---
     const expenseForm = document.getElementById('expenseForm');
@@ -1151,4 +1183,148 @@ document.addEventListener('DOMContentLoaded', () => {
     if(expenses.length > 0 && typeof renderExpenses === 'function') {
       renderExpenses();
     }
+
+    // --- Sales Logic ---
+    const saleForm = document.getElementById('saleForm');
+    const saleTitleInput = document.getElementById('saleTitle');
+    const saleCustomerInput = document.getElementById('saleCustomer');
+    const saleQuantityInput = document.getElementById('saleQuantity');
+    const salePriceUSDInput = document.getElementById('salePriceUSD');
+    const salePriceLYDInput = document.getElementById('salePriceLYD');
+    const saleDateInput = document.getElementById('saleDate');
+    const salesContainer = document.getElementById('salesContainer');
+    const totalSalesRealizedUSDElm = document.getElementById('totalSalesRealizedUSD');
+    const totalSalesRealizedLYDElm = document.getElementById('totalSalesRealizedLYD');
+    const searchSaleInput = document.getElementById('searchSaleInput');
+
+    if(salePriceUSDInput && salePriceLYDInput) {
+      salePriceUSDInput.addEventListener('input', () => {
+        const usd = parseFloat(salePriceUSDInput.value);
+        if(!isNaN(usd)) salePriceLYDInput.value = (usd * currentExchangeRate).toFixed(2);
+        else salePriceLYDInput.value = '';
+      });
+      salePriceLYDInput.addEventListener('input', () => {
+        const lyd = parseFloat(salePriceLYDInput.value);
+        if(!isNaN(lyd)) salePriceUSDInput.value = (lyd / currentExchangeRate).toFixed(2);
+        else salePriceUSDInput.value = '';
+      });
+    }
+
+    if(searchSaleInput) searchSaleInput.addEventListener('input', renderSales);
+
+    if (saleForm) {
+      saleForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const sale = {
+          title: saleTitleInput.value,
+          customer: saleCustomerInput.value,
+          quantity: parseInt(saleQuantityInput.value) || 1,
+          priceUSD: parseFloat(salePriceUSDInput.value) || 0,
+          date: saleDateInput.value,
+          timestamp: Date.now()
+        };
+        if (editingSaleId) {
+          update(ref(db, 'users/' + currentUserId + '/sales/' + editingSaleId), sale);
+          document.getElementById('cancelSaleEditBtn').click();
+        } else {
+          if (salesRef) push(salesRef, sale);
+          saleForm.reset();
+        }
+      });
+    }
+
+    const cancelSaleEditBtn = document.getElementById('cancelSaleEditBtn');
+    if(cancelSaleEditBtn) {
+      cancelSaleEditBtn.addEventListener('click', () => {
+        editingSaleId = null;
+        saleForm.reset();
+        cancelSaleEditBtn.style.display = 'none';
+        const btn = document.getElementById('saleSubmitBtn');
+        if(btn) {
+          btn.innerHTML = '<i class="fa-solid fa-plus"></i> حفظ المبيعة';
+          btn.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+        }
+      });
+    }
+
+    window.editSale = function(id) {
+      const s = sales.find(e => e.id === id);
+      if(!s) return;
+      editingSaleId = id;
+      saleTitleInput.value = s.title || '';
+      saleCustomerInput.value = s.customer || '';
+      saleQuantityInput.value = s.quantity || 1;
+      salePriceUSDInput.value = s.priceUSD || '';
+      saleDateInput.value = s.date || '';
+      
+      const usd = parseFloat(s.priceUSD);
+      if(!isNaN(usd) && salePriceLYDInput) salePriceLYDInput.value = (usd * currentExchangeRate).toFixed(2);
+      else if (salePriceLYDInput) salePriceLYDInput.value = '';
+
+      cancelSaleEditBtn.style.display = 'inline-block';
+      const btn = document.getElementById('saleSubmitBtn');
+      btn.innerHTML = '<i class="fa-solid fa-save"></i> حفظ التعديل';
+      btn.style.background = 'var(--status-ready)';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.deleteSale = async function(id) {
+      if(confirm('هل أنت متأكد من حذف هذه المبيعة؟')) {
+        await remove(ref(db, 'users/' + currentUserId + '/sales/' + id));
+      }
+    };
+
+    window.renderSales = function() {
+      if(!salesContainer) return;
+      salesContainer.innerHTML = '';
+      let totalUsd = 0;
+
+      let filtered = [...sales];
+      if (searchSaleInput && searchSaleInput.value.trim() !== '') {
+        const q = searchSaleInput.value.toLowerCase().trim();
+        filtered = filtered.filter(s => 
+          (s.title && s.title.toLowerCase().includes(q)) || 
+          (s.customer && s.customer.toLowerCase().includes(q))
+        );
+      }
+
+      if (filtered.length === 0) {
+        salesContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">لا توجد مبيعات مسجلة.</p>';
+        if(totalSalesRealizedUSDElm) totalSalesRealizedUSDElm.textContent = '$0.00';
+        if(totalSalesRealizedLYDElm) totalSalesRealizedLYDElm.textContent = '0.00 د.ل';
+        return;
+      }
+
+      filtered.sort((a, b) => b.timestamp - a.timestamp).forEach(s => {
+        const usd = parseFloat(s.priceUSD) || 0;
+        totalUsd += usd;
+        const lyd = (usd * currentExchangeRate).toFixed(2);
+
+        const card = document.createElement('div');
+        card.className = 'glass-panel fade-in';
+        card.style.padding = '1.5rem';
+        card.style.borderLeft = '4px solid #3b82f6';
+        card.style.position = 'relative';
+        card.innerHTML = `
+          <div style="position: absolute; top: 10px; left: 10px; display: flex; gap: 8px;">
+            <button onclick="editSale('${s.id}')" style="background: var(--status-ready); color: white; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;"><i class="fa-solid fa-pen"></i></button>
+            <button onclick="deleteSale('${s.id}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
+          </div>
+          <h3 style="margin-bottom: 10px; color: #60a5fa;"><i class="fa-solid fa-box-open"></i> ${s.title}</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-user"></i> الزبون: <strong>${s.customer || 'غير محدد'}</strong></p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-cubes"></i> الكمية: <strong>${s.quantity}</strong></p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;"><i class="fa-solid fa-calendar"></i> التاريخ: <strong>${s.date || 'غير محدد'}</strong></p>
+          <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+             <span style="color: var(--text-muted); font-size: 0.9rem;">قيمة البيع:</span>
+             <span style="font-size: 1.3rem; font-weight: 800; color: #60a5fa;">$${usd.toFixed(2)} <span style="font-size: 0.9rem; color: var(--text-muted);">(${lyd} د.ل)</span></span>
+          </div>
+        `;
+        salesContainer.appendChild(card);
+      });
+
+      if(totalSalesRealizedUSDElm) totalSalesRealizedUSDElm.textContent = `$${totalUsd.toFixed(2)}`;
+      if(totalSalesRealizedLYDElm) totalSalesRealizedLYDElm.textContent = `${(totalUsd * currentExchangeRate).toFixed(2)} د.ل`;
+    };
+
+    if(sales.length > 0 && typeof renderSales === 'function') renderSales();
 });

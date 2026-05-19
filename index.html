@@ -109,6 +109,7 @@
     <div class="nav-tabs" style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; overflow-x: auto;">
       <button class="nav-tab active" id="tabShipments" style="background: transparent; color: var(--primary-accent); border: none; font-family: var(--font-family); font-size: 1.2rem; font-weight: 700; padding: 0.5rem 1rem; cursor: pointer; border-bottom: 3px solid var(--primary-accent); transition: all 0.3s ease; white-space: nowrap;"><i class="fa-solid fa-box-open"></i> البضائع والشحنات</button>
       <button class="nav-tab" id="tabExpenses" style="background: transparent; color: var(--text-muted); border: none; font-family: var(--font-family); font-size: 1.2rem; font-weight: 700; padding: 0.5rem 1rem; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.3s ease; white-space: nowrap;"><i class="fa-solid fa-file-invoice-dollar"></i> المصروفات العامة</button>
+      <button class="nav-tab" id="tabSales" style="background: transparent; color: var(--text-muted); border: none; font-family: var(--font-family); font-size: 1.2rem; font-weight: 700; padding: 0.5rem 1rem; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.3s ease; white-space: nowrap;"><i class="fa-solid fa-hand-holding-dollar"></i> المبيعات</button>
     </div>
 
     <main class="main-content" id="shipmentsView">
@@ -413,6 +414,68 @@
         </div>
         <div class="shipments-grid" id="expensesContainer">
           <!-- Expense Cards injected here -->
+        </div>
+      </section>
+    </main>
+
+    <main class="main-content hidden" id="salesView">
+      <section class="add-shipment-section glass-panel fade-in">
+        <h2><i class="fa-solid fa-cart-plus"></i> إضافة عملية بيع جديدة</h2>
+        <form id="saleForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="saleTitle">المنتج المباع</label>
+              <input type="text" id="saleTitle" placeholder="اسم المنتج أو البضاعة المباعة..." required>
+            </div>
+            <div class="form-group">
+              <label for="saleCustomer">اسم الزبون (اختياري)</label>
+              <input type="text" id="saleCustomer" placeholder="اسم المشتري أو جهة البيع...">
+            </div>
+            <div class="form-group">
+              <label for="saleQuantity">الكمية المباعة</label>
+              <input type="number" id="saleQuantity" placeholder="1" value="1" min="1" required>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label>سعر البيع (للكمية بالكامل)</label>
+              <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                  <label for="salePriceUSD" style="color: #60a5fa; font-size: 0.85rem; margin-bottom: 5px; display: block;"><i class="fa-solid fa-dollar-sign"></i> القيمة بالدولار</label>
+                  <input type="number" id="salePriceUSD" placeholder="0.00" step="0.01" style="width: 100%; border: none; background: transparent; font-size: 1.2rem; font-weight: bold; color: white; padding: 5px; outline: none;" required>
+                </div>
+                <div style="flex: 1; min-width: 150px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                  <label for="salePriceLYD" style="color: #10b981; font-size: 0.85rem; margin-bottom: 5px; display: block;"><i class="fa-solid fa-money-bill-wave"></i> القيمة بالدينار الليبي</label>
+                  <input type="number" id="salePriceLYD" placeholder="0.00" step="0.01" style="width: 100%; border: none; background: transparent; font-size: 1.2rem; font-weight: bold; color: white; padding: 5px; outline: none;" required>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="saleDate">تاريخ البيع</label>
+              <input type="date" id="saleDate" required>
+            </div>
+          </div>
+          <div class="form-summary">
+            <button type="submit" id="saleSubmitBtn" class="btn-primary" style="flex: 1; background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);">
+              <i class="fa-solid fa-plus"></i> حفظ المبيعة
+            </button>
+            <button type="button" id="cancelSaleEditBtn" class="btn-secondary" style="display: none; padding: 12px 20px; border-radius: 8px; border: none; background: rgba(255,255,255,0.1); color: white; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 600;">
+              <i class="fa-solid fa-times"></i> إلغاء التعديل
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="shipments-list-section">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-list-check"></i> سجل المبيعات</h2>
+          <div class="stats glass-badge" style="border-color: #3b82f6; color: #60a5fa; background: rgba(59, 130, 246, 0.1);">إجمالي المبيعات المحققة: <span id="totalSalesRealizedUSD" style="font-weight: 800;">$0.00</span> | <span id="totalSalesRealizedLYD" style="font-weight: 800;">0.00 د.ل</span></div>
+        </div>
+        <div class="search-filter-container glass-panel" style="margin-bottom: 2rem; padding: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; border-radius: 12px;">
+          <div class="form-group" style="flex: 2; min-width: 250px;">
+            <input type="text" id="searchSaleInput" placeholder="بحث باسم المنتج، أو الزبون..." style="width: 100%;">
+          </div>
+        </div>
+        <div class="shipments-grid" id="salesContainer">
+          <!-- Sale Cards injected here -->
         </div>
       </section>
     </main>
