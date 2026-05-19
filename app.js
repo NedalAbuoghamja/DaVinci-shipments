@@ -1202,6 +1202,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const salePriceLYDInput = document.getElementById('salePriceLYD');
     const saleDiscountUSDInput = document.getElementById('saleDiscountUSD');
     const saleDiscountLYDInput = document.getElementById('saleDiscountLYD');
+    const saleDeliveryFeeLYDInput = document.getElementById('saleDeliveryFeeLYD');
+    const saleDeliveryTypeInput = document.getElementById('saleDeliveryType');
     const saleDateInput = document.getElementById('saleDate');
     const saleNotesInput = document.getElementById('saleNotes');
     
@@ -1251,6 +1253,8 @@ document.addEventListener('DOMContentLoaded', () => {
           quantity: parseInt(saleQuantityInput.value) || 1,
           priceUSD: parseFloat(salePriceUSDInput.value) || 0,
           discountUSD: parseFloat(saleDiscountUSDInput.value) || 0,
+          deliveryFeeLYD: parseFloat(saleDeliveryFeeLYDInput.value) || 0,
+          deliveryType: saleDeliveryTypeInput.value || 'customer',
           date: saleDateInput.value,
           notes: saleNotesInput.value,
           timestamp: Date.now()
@@ -1292,6 +1296,8 @@ document.addEventListener('DOMContentLoaded', () => {
       saleQuantityInput.value = s.quantity || 1;
       salePriceUSDInput.value = s.priceUSD || '';
       saleDiscountUSDInput.value = s.discountUSD || '';
+      saleDeliveryFeeLYDInput.value = s.deliveryFeeLYD || 0;
+      saleDeliveryTypeInput.value = s.deliveryType || 'customer';
       saleDateInput.value = s.date || '';
       saleNotesInput.value = s.notes || '';
       
@@ -1327,6 +1333,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const lyd = (usd * currentExchangeRate).toFixed(2);
       const lydDisc = (usdDisc * currentExchangeRate).toFixed(2);
       const finalLyd = (finalUsd * currentExchangeRate).toFixed(2);
+
+      const deliveryLyd = parseFloat(s.deliveryFeeLYD) || 0;
+      const isDeliveryOnCustomer = s.deliveryType === 'customer';
+      const finalLydVal = parseFloat(finalLyd);
+      const totalCustomerLyd = isDeliveryOnCustomer ? (finalLydVal + deliveryLyd) : finalLydVal;
 
       const printWindow = window.open('', '_blank', 'width=600,height=900');
       
@@ -1547,14 +1558,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span>إجمالي الأصناف:</span>
                 <span>${lyd} د.ل</span>
               </div>
+              ${usdDisc > 0 ? `
               <div class="total-row" style="color: #10b981;">
                 <span>خصم للزبون:</span>
                 <span dir="ltr">- ${lydDisc} د.ل</span>
-              </div>
+              </div>` : ''}
+              ${deliveryLyd > 0 ? `
+              <div class="total-row">
+                <span>رسوم التوصيل:</span>
+                <span>${isDeliveryOnCustomer ? `<span dir="ltr">+ ${deliveryLyd} د.ل</span>` : '<span style="color:#10b981; font-weight:bold;">مجاني (على المتجر)</span>'}</span>
+              </div>` : ''}
               
               <div class="final-total">
                 <span>الإجمالي النهائي</span>
-                <span dir="ltr">${finalLyd} د.ل</span>
+                <span dir="ltr">${totalCustomerLyd.toFixed(2)} د.ل</span>
               </div>
             </div>
 
@@ -1614,6 +1631,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const lydDisc = (usdDisc * currentExchangeRate).toFixed(2);
         const finalLyd = (finalUsd * currentExchangeRate).toFixed(2);
 
+        const deliveryLyd = parseFloat(s.deliveryFeeLYD) || 0;
+        const isDeliveryOnCustomer = s.deliveryType === 'customer';
+        const finalLydVal = parseFloat(finalLyd);
+        const totalCustomerLyd = isDeliveryOnCustomer ? (finalLydVal + deliveryLyd) : finalLydVal;
+
         const card = document.createElement('div');
         card.className = 'glass-panel fade-in';
         card.style.padding = '1.5rem';
@@ -1632,6 +1654,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-location-dot"></i> العنوان: <strong style="color: white;">${s.address || '---'}</strong></p>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-map-pin"></i> أقرب نقطة دالة: <strong style="color: white;">${s.landmark || '---'}</strong></p>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-cubes"></i> الكمية: <strong style="color: white;">${s.quantity}</strong></p>
+          ${deliveryLyd > 0 ? `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-truck"></i> التوصيل: <strong style="color: white;">${deliveryLyd} د.ل (${isDeliveryOnCustomer ? 'على الزبون' : 'مجاني/على المتجر'})</strong></p>` : ''}
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;"><i class="fa-solid fa-calendar"></i> التاريخ: <strong style="color: white;">${s.date || 'غير محدد'}</strong></p>
           
           ${s.notes ? `<div style="margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; font-size: 0.85rem;"><i class="fa-solid fa-note-sticky" style="color: #f59e0b;"></i> <span style="color: white;">${s.notes}</span></div>` : ''}
@@ -1648,8 +1671,8 @@ document.addEventListener('DOMContentLoaded', () => {
              </div>
              ` : ''}
              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px; margin-top: 2px;">
-               <span style="color: white; font-size: 0.95rem;">صافي قيمة البيع:</span>
-               <span style="font-size: 1.3rem; font-weight: 800; color: #10b981;">$${finalUsd.toFixed(2)} <span style="font-size: 0.9rem; color: var(--text-muted);">(${finalLyd} د.ل)</span></span>
+               <span style="color: white; font-size: 0.95rem;">المطلوب من الزبون:</span>
+               <span style="font-size: 1.3rem; font-weight: 800; color: #10b981;">${totalCustomerLyd.toFixed(2)} د.ل <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">(شامل التوصيل)</span></span>
              </div>
           </div>
         `;
