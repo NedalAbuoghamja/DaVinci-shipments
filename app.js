@@ -29,6 +29,21 @@ let editingShipmentId = null;
 let editingExpenseId = null;
 let editingSaleId = null;
 
+  window.populateExpenseShipments = function() {
+    const select = document.getElementById('expenseRelatedShipments');
+    if(!select) return;
+    const currentSelection = Array.from(select.selectedOptions).map(opt => opt.value);
+    select.innerHTML = '';
+    
+    [...shipments].sort((a,b) => b.timestamp - a.timestamp).forEach(sh => {
+      const opt = document.createElement('option');
+      opt.value = sh.id;
+      opt.textContent = `${sh.name} ${sh.code ? `(${sh.code})` : ''} - ${sh.quantity} قطعة`;
+      if(currentSelection.includes(sh.id)) opt.selected = true;
+      select.appendChild(opt);
+    });
+  };
+
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('shipmentForm');
   const globalExchangeRateInput = document.getElementById('globalExchangeRate');
@@ -817,6 +832,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateFinancialSummary(filteredList) {
     let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0, totalSales = 0, totalProfit = 0;
 
+    if(totalProductsElm) totalProductsElm.textContent = count;
+    if(totalShipmentsCostElm) totalShipmentsCostElm.textContent = `$${totalCost.toFixed(2)}`;
+    if(totalShipmentsCostLYDElm) totalShipmentsCostLYDElm.textContent = `${(totalCost * currentExchangeRate).toFixed(2)} د.ل`;
+    if(totalCbmElm) totalCbmElm.textContent = `${totalCBM.toFixed(2)} CBM`;
+    
+    if (typeof populateExpenseShipments === 'function') populateExpenseShipments();
+
     filteredList.forEach(s => {
       // Exclude "Thinking of buying" from totals
       if (s.status === 'نفكر نشريه') return;
@@ -1028,6 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const expenseCategoryInput = document.getElementById('expenseCategory');
     const expenseAmountUSDInput = document.getElementById('expenseAmountUSD');
     const expenseAmountLYDInput = document.getElementById('expenseAmountLYD');
+    const expenseRelatedShipmentsSelect = document.getElementById('expenseRelatedShipments');
     const expenseDateInput = document.getElementById('expenseDate');
     const expensesContainer = document.getElementById('expensesContainer');
     const totalExpensesUSDElm = document.getElementById('totalExpensesUSD');
@@ -1062,11 +1085,16 @@ document.addEventListener('DOMContentLoaded', () => {
       expenseForm.addEventListener('submit', (e) => {
         e.preventDefault();
         
+        const selectedShipments = expenseRelatedShipmentsSelect 
+          ? Array.from(expenseRelatedShipmentsSelect.selectedOptions).map(opt => opt.value) 
+          : [];
+        
         const expense = {
           title: expenseTitleInput.value,
           category: expenseCategoryInput.value,
           amountUSD: parseFloat(expenseAmountUSDInput.value) || 0,
           date: expenseDateInput.value,
+          relatedShipments: selectedShipments,
           timestamp: Date.now()
         };
 
@@ -1102,6 +1130,14 @@ document.addEventListener('DOMContentLoaded', () => {
       expenseCategoryInput.value = exp.category || 'أخرى';
       expenseAmountUSDInput.value = exp.amountUSD || '';
       expenseDateInput.value = exp.date || '';
+      
+      if(expenseRelatedShipmentsSelect && exp.relatedShipments) {
+        Array.from(expenseRelatedShipmentsSelect.options).forEach(opt => {
+          opt.selected = exp.relatedShipments.includes(opt.value);
+        });
+      } else if (expenseRelatedShipmentsSelect) {
+        expenseRelatedShipmentsSelect.selectedIndex = -1;
+      }
       
       const usd = parseFloat(exp.amountUSD);
       if(!isNaN(usd) && expenseAmountLYDInput) {
@@ -1159,6 +1195,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if(exp.category.includes('نقل')) icon = 'fa-truck';
         if(exp.category.includes('جمارك')) icon = 'fa-building-shield';
 
+        let linkedHTML = '';
+        if (exp.relatedShipments && exp.relatedShipments.length > 0) {
+          const linkedNames = exp.relatedShipments.map(shId => {
+            const sh = shipments.find(s => s.id === shId);
+            return sh ? sh.name : 'منتج محذوف';
+          }).join('، ');
+          linkedHTML = `<div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px;"><i class="fa-solid fa-link" style="color: #60a5fa;"></i> مرتبط بـ: <span style="color: white;">${linkedNames}</span></div>`;
+        }
+
         const card = document.createElement('div');
         card.className = 'glass-panel fade-in';
         card.style.padding = '1.5rem';
@@ -1172,6 +1217,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <h3 style="margin-bottom: 10px; color: var(--primary-accent);"><i class="fa-solid ${icon}"></i> ${exp.title}</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-tags"></i> التصنيف: <strong>${exp.category}</strong></p>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;"><i class="fa-solid fa-calendar"></i> التاريخ: <strong>${exp.date || 'غير محدد'}</strong></p>
+          ${linkedHTML}
           <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
              <span style="color: var(--text-muted); font-size: 0.9rem;">المبلغ:</span>
              <span style="font-size: 1.3rem; font-weight: 800; color: #ef4444;">$${parseFloat(exp.amountUSD).toFixed(2)} <span style="font-size: 0.9rem; color: var(--text-muted);">(${lyd} د.ل)</span></span>
