@@ -968,9 +968,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const extra = parseFloat(s.additionalCosts) || 0;
         totalExtra += extra;
+
+        // Calculate expected net profit for commercial shipments (assuming all qty sold at sellingPriceUSD without discount)
+        const totalCostUsd = (parseFloat(s.costUSD) || 0) + shipCost + extra;
+        const sellPrice = parseFloat(s.sellingPriceUSD) || 0;
+        if (sellPrice > 0) {
+          totalProfit += (sellPrice * qty) - totalCostUsd;
+        }
       });
 
-      // Calculate actual realized sales and profit from sales array (using DB data)
+      // Calculate actual realized sales from sales array (using DB data)
       sales.forEach(sale => {
         const code = (sale.productCode || '').trim().toLowerCase();
         let match = null;
@@ -983,7 +990,7 @@ document.addEventListener('DOMContentLoaded', () => {
           );
         }
         
-        // Exclude personal use shipments from net sales/profit calculations
+        // Exclude personal use shipments from actual sales calculations
         if (match && (match.isPersonalUse || match.status === 'استخدام شخصي')) {
           return;
         }
@@ -992,20 +999,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const saleDiscount = parseFloat(sale.discountUSD) || 0;
         const revenue = Math.max(0, salePrice - saleDiscount);
         totalSales += revenue;
-
-        let unitCost = 0;
-        if (match) {
-          const mQty = parseFloat(match.quantity) || 1;
-          const mGoods = parseFloat(match.costUSD) || 0;
-          const mShip = match.shippingType === 'جوي'
-                        ? (parseFloat(match.weightKG) || 0) * (parseFloat(match.kgPrice) || 0)
-                        : (parseFloat(match.cbmQuantity) || 0) * (parseFloat(match.cbmPrice) || 0);
-          const mExtra = parseFloat(match.additionalCosts) || 0;
-          unitCost = (mGoods + mShip + mExtra) / mQty;
-        }
-        
-        const costOfSoldUnits = unitCost * (parseFloat(sale.quantity) || 1);
-        totalProfit += (revenue - costOfSoldUnits);
       });
 
       const totalShipping = totalSeaShipping + totalAirShipping;
