@@ -75,6 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const totalExtraLYDElm = document.getElementById('totalExtraLYD');
   const grandTotalUSDElm = document.getElementById('grandTotalUSD');
   const grandTotalLYDElm = document.getElementById('grandTotalLYD');
+  const totalQuantityCountElm = document.getElementById('totalQuantityCount');
+  const totalAirQuantityElm = document.getElementById('totalAirQuantity');
+  const totalSeaQuantityElm = document.getElementById('totalSeaQuantity');
   
   const totalSalesUSDElm = document.getElementById('totalSalesUSD');
   const totalSalesLYDElm = document.getElementById('totalSalesLYD');
@@ -909,7 +912,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateFinancialSummary(filteredList) {
     try {
-      let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0, totalSales = 0, totalProfit = 0;
+      let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0, totalSales = 0, totalProfit = 0,
+          totalQuantity = 0, totalAirQty = 0, totalSeaQty = 0;
 
       if (typeof populateExpenseShipments === 'function') populateExpenseShipments();
 
@@ -917,9 +921,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (s.status === 'نفكر نشريه' || s.status === 'U+U?UO U+O\'OUSU') return;
 
         const qty = parseFloat(s.quantity) || 1;
+        totalQuantity += qty;
+
+        const isAir = s.shippingType === 'جوي' || s.shippingType === 'OU^US';
+        if (isAir) {
+          totalAirQty += qty;
+        } else {
+          totalSeaQty += qty;
+        }
+
         totalGoods += parseFloat(s.costUSD) || 0;
         
-        const isAir = s.shippingType === 'جوي' || s.shippingType === 'OU^US';
         const shipCost = isAir 
                          ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
                          : (parseFloat(s.cbmQuantity) || 0) * (parseFloat(s.cbmPrice) || 0);
@@ -965,6 +977,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if(grandTotalUSDElm) grandTotalUSDElm.textContent = `$${grandTotalUSD.toFixed(2)}`;
       if(grandTotalLYDElm) grandTotalLYDElm.textContent = `${grandTotalLYD.toFixed(2)} د.ل`;
+
+      if(totalQuantityCountElm) totalQuantityCountElm.textContent = totalQuantity.toLocaleString();
+      if(totalAirQuantityElm) totalAirQuantityElm.textContent = totalAirQty.toLocaleString();
+      if(totalSeaQuantityElm) totalSeaQuantityElm.textContent = totalSeaQty.toLocaleString();
     } catch(err) {
       console.error(err);
       alert('Error in updateFinancialSummary: ' + err.message);
