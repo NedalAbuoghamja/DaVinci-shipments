@@ -772,8 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const updates = {};
       visibleShipments.forEach(s => {
-        const currentExtra = parseFloat(s.additionalCosts) || 0;
-        updates[`${s.id}/additionalCosts`] = currentExtra + sharePerProduct;
+        updates[`${s.id}/additionalCosts`] = sharePerProduct;
       });
 
       try {
