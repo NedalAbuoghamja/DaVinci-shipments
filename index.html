@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منظومة إدارة الشحنات الذكية | v28.1</title>
+  <title>منظومة إدارة الشحنات الذكية | Smart Shipment Manager</title>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +13,7 @@
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=8">
   <style>
     .auth-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
@@ -26,6 +26,9 @@
   </style>
 </head>
 <body>
+  <div style="background: #fbbf24; color: #000; padding: 10px; text-align: center; font-weight: bold; font-size: 1.2rem; z-index: 10000; position: relative;">
+    <i class="fa-solid fa-circle-check"></i> تم التحديث للنسخة v2.0 - (سعر البيع + الربح + خيار "نفكر نشريه")
+  </div>
   <!-- Auth Overlay -->
   <div id="authOverlay" class="auth-overlay hidden">
     <div class="auth-modal glass-panel">
@@ -103,7 +106,12 @@
       </div>
     </header>
 
-    <main class="main-content">
+    <div class="nav-tabs" style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; overflow-x: auto;">
+      <button class="nav-tab active" id="tabShipments" style="background: transparent; color: var(--primary-accent); border: none; font-family: var(--font-family); font-size: 1.2rem; font-weight: 700; padding: 0.5rem 1rem; cursor: pointer; border-bottom: 3px solid var(--primary-accent); transition: all 0.3s ease; white-space: nowrap;"><i class="fa-solid fa-box-open"></i> البضائع والشحنات</button>
+      <button class="nav-tab" id="tabExpenses" style="background: transparent; color: var(--text-muted); border: none; font-family: var(--font-family); font-size: 1.2rem; font-weight: 700; padding: 0.5rem 1rem; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.3s ease; white-space: nowrap;"><i class="fa-solid fa-file-invoice-dollar"></i> المصروفات العامة</button>
+    </div>
+
+    <main class="main-content" id="shipmentsView">
       <!-- Add New Shipment Section -->
       <section class="add-shipment-section glass-panel fade-in">
         <h2><i class="fa-solid fa-box-open"></i> تسجيل شحنة جديدة</h2>
@@ -159,14 +167,14 @@
                   </div>
                 </div>
 
-                <div class="form-group" style="grid-column: 1 / -1;">
-                  <label for="additionalCosts" style="color: var(--status-pending); font-weight: bold;"><i class="fa-solid fa-plus-minus"></i> تكاليف إضافية للمنتج (إجمالي الشحنة بالكامل) ($)</label>
-                  <input type="number" id="additionalCosts" placeholder="أدخل أي تكاليف إضافية تخص هذه الشحنة بالكامل" step="0.01" value="0">
+                <div class="form-group">
+                  <label for="additionalCosts">تكاليف إضافية ($)</label>
+                  <input type="number" id="additionalCosts" placeholder="0.00" step="0.01" value="0">
                 </div>
 
                 <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">
-                  <label for="sellingPriceLYD" style="color: #60a5fa;"><i class="fa-solid fa-tag"></i> سعر البيع المقترح للقطعة (د.ل)</label>
-                  <input type="number" id="sellingPriceLYD" placeholder="0.00" step="0.01" value="0">
+                  <label for="sellingPriceUSD" style="color: #60a5fa;"><i class="fa-solid fa-tag"></i> سعر البيع المقترح للقطعة ($)</label>
+                  <input type="number" id="sellingPriceUSD" placeholder="0.00" step="0.01" value="0">
                   <div id="profitPreview" style="margin-top: 5px; font-size: 0.85rem; font-weight: bold; color: #10b981;"></div>
                 </div>
 
@@ -184,12 +192,16 @@
               </div>
             </div>
 
+            <div class="form-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; background: rgba(59, 130, 246, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">
+              <input type="checkbox" id="isPersonalUse" style="width: 20px; height: 20px; cursor: pointer;">
+              <label for="isPersonalUse" style="margin: 0; cursor: pointer; color: #60a5fa; font-weight: bold;"><i class="fa-solid fa-user-tag"></i> استخدام شخصي (لن يتم احتساب ربح له)</label>
+            </div>
+
             <div class="form-group">
               <label for="status">حالة الشحنة (تتبع)</label>
               <select id="status" required>
                 <option value="تم الطلب وفي انتظار التجهيز">تم الطلب وفي انتظار التجهيز</option>
                 <option value="نفكر نشريه">نفكر نشريه (قيد الدراسة)</option>
-                <option value="استخدام شخصي">استخدام شخصي (خارج الحسبة)</option>
                 <option value="في طريقها لمخزن الصين">في طريقها لمخزن الصين</option>
                 <option value="الآن في مخزن الصين">الآن في مخزن الصين</option>
                 <option value="واصلة لمخزن الصين ورايحة">واصلة لمخزن الصين ورايحة (مفقودة)</option>
@@ -254,18 +266,6 @@
       <section id="financialSummarySection" class="glass-panel fade-in" style="margin-bottom: 3rem; padding: 2rem;">
         <h2 style="margin-bottom: 20px; font-size: 1.5rem;"><i class="fa-solid fa-chart-pie"></i> ملخص التكاليف المالية (للشحنات المعروضة)</h2>
         <div class="summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--primary-accent); background: rgba(124, 58, 237, 0.05);">
-            <p style="color: var(--primary-accent); font-size: 0.85rem; font-weight: bold;">إجمالي القطع</p>
-            <h3 id="totalQuantityCount" style="color: var(--text-main); font-size: 1.5rem; font-weight: 800;">0</h3>
-          </div>
-          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--status-transit); background: rgba(59, 130, 246, 0.05);">
-            <p style="color: var(--status-transit); font-size: 0.85rem; font-weight: bold;">قطع (جوي)</p>
-            <h3 id="totalAirQuantity" style="color: var(--text-main); font-size: 1.5rem; font-weight: 800;">0</h3>
-          </div>
-          <div class="summary-item glass-panel" style="padding: 15px; text-align: center; border: 1px solid var(--status-pending); background: rgba(245, 158, 11, 0.05);">
-            <p style="color: var(--status-pending); font-size: 0.85rem; font-weight: bold;">قطع (بحري)</p>
-            <h3 id="totalSeaQuantity" style="color: var(--text-main); font-size: 1.5rem; font-weight: 800;">0</h3>
-          </div>
           <div class="summary-item glass-panel" style="padding: 15px; text-align: center;">
             <p style="color: var(--text-muted); font-size: 0.85rem;">إجمالي البضاعة</p>
             <h3 id="totalGoodsUSD" style="color: var(--primary-accent); font-size: 1.2rem;">$0.00</h3>
@@ -308,47 +308,22 @@
       <section class="shipments-list-section">
         <div class="section-header">
           <h2><i class="fa-solid fa-cubes"></i> شحناتي الحالية</h2>
-          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; gap: 10px; align-items: center;">
             <button id="selectAllBtn" class="glass-badge" style="cursor: pointer; border: none; font-family: inherit;"><i class="fa-solid fa-check-double"></i> تحديد الكل</button>
             <button id="exportExcelBtn" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-file-excel"></i> تصدير المحددة</button>
             <div class="stats glass-badge">إجمالي شحناتك: <span id="totalShipmentsCount">0</span></div>
           </div>
         </div>
 
-        <div class="bulk-actions-container glass-panel" style="margin-bottom: 1.5rem; padding: 1.2rem; display: flex; gap: 1.5rem; flex-wrap: wrap; border-radius: 12px; align-items: center; background: rgba(0, 0, 0, 0.2); border: 1px dashed rgba(168, 85, 247, 0.5);">
-          <div style="font-weight: bold; color: #a855f7; display: flex; align-items: center; gap: 8px; font-size: 1.1rem;"><i class="fa-solid fa-bolt"></i> إجراءات جماعية:</div>
-          
-          <div style="display: flex; gap: 8px; align-items: center; background: rgba(168, 85, 247, 0.1); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(168, 85, 247, 0.3); flex-wrap: wrap;">
-            <label for="bulkProfitPercent" style="font-size: 0.85rem; font-weight: bold; color: white;">نسبة الربح %:</label>
-            <input type="number" id="bulkProfitPercent" value="50" min="1" style="width: 50px; padding: 4px; border-radius: 6px; border: 1px solid var(--primary-accent); background: var(--bg-dark); color: white; text-align: center; font-size: 0.85rem;">
-            <button id="applyAutoProfitBtn" class="btn-primary" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: linear-gradient(135deg, #a855f7, #7c3aed); border: none; cursor: pointer;"><i class="fa-solid fa-magic"></i> تصحيح الكل</button>
-          </div>
-
-          <div style="display: flex; gap: 8px; align-items: center; background: rgba(245, 158, 11, 0.1); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.3); flex-wrap: wrap;">
-            <label for="bulkExtraCostsInput" style="font-size: 0.85rem; font-weight: bold; color: #f59e0b; white-space: nowrap;">توزيع تكاليف ($):</label>
-            <input type="number" id="bulkExtraCostsInput" placeholder="مبلغ يوزع" style="width: 80px; padding: 4px; border-radius: 6px; border: 1px solid #f59e0b; background: var(--bg-dark); color: white; text-align: center; font-size: 0.85rem;">
-            <button id="applyBulkExtraCostsBtn" class="btn-primary" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: #f59e0b; border: none; cursor: pointer; color: black; font-weight: bold; border-radius: 6px;"><i class="fa-solid fa-divide"></i> توزيع</button>
-            <button id="resetBulkExtraCostsBtn" class="btn-primary" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: #ef4444; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 6px;"><i class="fa-solid fa-trash-can"></i> تصفير</button>
-          </div>
-        </div>
-
-        <div class="search-filter-container glass-panel" style="margin-bottom: 2rem; padding: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; border-radius: 12px; align-items: center;">
+        <div class="search-filter-container glass-panel" style="margin-bottom: 2rem; padding: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; border-radius: 12px;">
           <div class="form-group" style="flex: 2; min-width: 250px;">
             <input type="text" id="searchInput" placeholder="بحث بالاسم، كود الصين، كود التتبع، كود الشاهين..." style="width: 100%;">
           </div>
-          <div class="form-group" style="flex: 1; min-width: 150px;">
-            <select id="shippingTypeFilter" style="width: 100%;">
-              <option value="الكل" selected>جميع أنواع الشحن</option>
-              <option value="جوي">شحن جوي</option>
-              <option value="بحري">شحن بحري</option>
-            </select>
-          </div>
           <div class="form-group" style="flex: 1; min-width: 200px;">
             <select id="statusFilter" style="width: 100%;">
-              <option value="الكل" selected>جميع الحالات</option>
+              <option value="الكل">جميع الحالات</option>
               <option value="تم الطلب وفي انتظار التجهيز">تم الطلب وفي انتظار التجهيز</option>
               <option value="نفكر نشريه">نفكر نشريه (قيد الدراسة)</option>
-              <option value="استخدام شخصي">استخدام شخصي (خارج الحسبة)</option>
               <option value="في طريقها لمخزن الصين">في طريقها لمخزن الصين</option>
               <option value="الآن في مخزن الصين">الآن في مخزن الصين</option>
               <option value="واصلة لمخزن الصين ورايحة">واصلة لمخزن الصين ورايحة (مفقودة)</option>
@@ -365,7 +340,84 @@
         </div>
       </section>
     </main>
+
+    <main class="main-content hidden" id="expensesView">
+      <section class="add-shipment-section glass-panel fade-in">
+        <h2><i class="fa-solid fa-file-invoice-dollar"></i> إضافة مصروف جديد</h2>
+        <form id="expenseForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="expenseTitle">وصف المصروف</label>
+              <input type="text" id="expenseTitle" placeholder="مثال: تغليف طلبيات، نقل داخلي..." required>
+            </div>
+            <div class="form-group">
+              <label for="expenseCategory">نوع المصروف (التصنيف)</label>
+              <select id="expenseCategory" required>
+                <option value="شحن جوي">شحن جوي ✈️</option>
+                <option value="شحن بحري">شحن بحري 🚢</option>
+                <option value="تغليف وتعبئة">تغليف وتعبئة 📦</option>
+                <option value="نقل محلي">نقل محلي 🚚</option>
+                <option value="جمارك وتخليص">جمارك وتخليص 🏢</option>
+                <option value="أخرى">أخرى 📝</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label>المبلغ المدفوع</label>
+              <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                  <label for="expenseAmountUSD" style="color: #10b981; font-size: 0.85rem; margin-bottom: 5px; display: block;"><i class="fa-solid fa-dollar-sign"></i> القيمة بالدولار</label>
+                  <input type="number" id="expenseAmountUSD" placeholder="0.00" step="0.01" style="width: 100%; border: none; background: transparent; font-size: 1.2rem; font-weight: bold; color: white; padding: 5px; outline: none;" required>
+                </div>
+                <div style="flex: 1; min-width: 150px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                  <label for="expenseAmountLYD" style="color: #ef4444; font-size: 0.85rem; margin-bottom: 5px; display: block;"><i class="fa-solid fa-money-bill-wave"></i> القيمة بالدينار الليبي</label>
+                  <input type="number" id="expenseAmountLYD" placeholder="0.00" step="0.01" style="width: 100%; border: none; background: transparent; font-size: 1.2rem; font-weight: bold; color: white; padding: 5px; outline: none;" required>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="expenseDate">التاريخ</label>
+              <input type="date" id="expenseDate" required>
+            </div>
+          </div>
+          <div class="form-summary">
+            <button type="submit" id="expenseSubmitBtn" class="btn-primary" style="flex: 1; background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">
+              <i class="fa-solid fa-plus"></i> حفظ المصروف
+            </button>
+            <button type="button" id="cancelExpenseEditBtn" class="btn-secondary" style="display: none; padding: 12px 20px; border-radius: 8px; border: none; background: rgba(255,255,255,0.1); color: white; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 600;">
+              <i class="fa-solid fa-times"></i> إلغاء التعديل
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="shipments-list-section">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-list-check"></i> سجل المصروفات</h2>
+          <div class="stats glass-badge" style="border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.1);">إجمالي المصروفات: <span id="totalExpensesUSD" style="font-weight: 800;">$0.00</span> | <span id="totalExpensesLYD" style="font-weight: 800;">0.00 د.ل</span></div>
+        </div>
+        <div class="search-filter-container glass-panel" style="margin-bottom: 2rem; padding: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; border-radius: 12px;">
+          <div class="form-group" style="flex: 2; min-width: 250px;">
+            <input type="text" id="searchExpenseInput" placeholder="بحث في المصروفات..." style="width: 100%;">
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 200px;">
+            <select id="expenseCategoryFilter" style="width: 100%;">
+              <option value="الكل">جميع التصنيفات</option>
+              <option value="شحن جوي">شحن جوي</option>
+              <option value="شحن بحري">شحن بحري</option>
+              <option value="تغليف وتعبئة">تغليف وتعبئة</option>
+              <option value="نقل محلي">نقل محلي</option>
+              <option value="جمارك وتخليص">جمارك وتخليص</option>
+              <option value="أخرى">أخرى</option>
+            </select>
+          </div>
+        </div>
+        <div class="shipments-grid" id="expensesContainer">
+          <!-- Expense Cards injected here -->
+        </div>
+      </section>
+    </main>
   </div>
-  <script type="module" src="app.js?v=33_STATUS_FIX"></script>
+
+  <script type="module" src="app.js?v=18"></script>
 </body>
 </html>

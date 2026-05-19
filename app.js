@@ -17,85 +17,14 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 let shipmentsRef = null;
+let expensesRef = null;
 let currentUserId = null;
 
 let shipments = [];
+let expenses = [];
 let currentExchangeRate = 7.00;
 let editingShipmentId = null;
-let isSellingPriceManual = false;
-
-// Helper to update cost preview (forward declaration)
-let updateCostPreviewFn = () => {};
-
-// Global edit function
-function editShipment(id) {
-  console.log("Editing shipment:", id);
-  try {
-    const shipment = shipments.find(s => s.id === id);
-    if (!shipment) { alert('لم يتم العثور على الشحنة!'); return; }
-
-    editingShipmentId = id;
-    isSellingPriceManual = true; // Don't overwrite existing price when editing
-    
-    // Populate form safely
-    const setVal = (elmId, val) => { const el = document.getElementById(elmId); if (el) el.value = val; };
-    
-    setVal('itemName', shipment.itemName || '');
-    setVal('chinaCode', shipment.chinaCode || '');
-    setVal('trackingCode', (shipment.trackingCode !== 'لم يتم الإصدار بعد') ? shipment.trackingCode : '');
-    setVal('costUSD', shipment.costUSD || '');
-    setVal('quantity', shipment.quantity || 1);
-    setVal('cbmQuantity', shipment.cbmQuantity || '');
-    setVal('cbmPrice', shipment.cbmPrice || '');
-    setVal('weightKG', shipment.weightKG || '');
-    setVal('kgPrice', shipment.kgPrice || '');
-    setVal('additionalCosts', shipment.additionalCosts || '');
-    setVal('sellingPriceLYD', shipment.sellingPriceLYD || '');
-    
-    if(shipment.shippingType) {
-      const radio = document.querySelector(`input[name="shippingType"][value="${shipment.shippingType}"]`);
-      if(radio) {
-        radio.checked = true;
-        radio.dispatchEvent(new Event('change'));
-      }
-    }
-    setVal('status', shipment.status || '');
-    setVal('dateChina', shipment.dateChina || '');
-    setVal('dateDeparture', shipment.dateDeparture || '');
-    setVal('dateLibya', shipment.dateLibya || '');
-    setVal('shaheenCode', shipment.shaheenCode || '');
-    setVal('tripNumber', shipment.tripNumber || '');
-    
-    // Update buttons
-    const submitBtn = document.getElementById('submitBtn');
-    if (submitBtn) {
-      submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> حفظ التعديلات';
-      submitBtn.style.background = 'var(--status-ready)';
-    }
-    const cancelBtn = document.getElementById('cancelEditBtn');
-    if (cancelBtn) cancelBtn.style.display = 'inline-block';
-
-    updateCostPreviewFn();
-    
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } catch(err) {
-    console.error("Edit error:", err);
-    alert("حدث خطأ في التعديل: " + err.message);
-  }
-}
-
-// Global delete function
-async function deleteShipment(id) {
-  try {
-    if(confirm('هل أنت متأكد من حذف هذه الشحنة نهائياً من جميع الأجهزة؟')) {
-      const itemRef = ref(getDatabase(), 'users/' + currentUserId + '/shipments/' + id);
-      await remove(itemRef); // Removes from Firebase Cloud ☁️
-    }
-  } catch(err) {
-    alert("فشل في حذف الشحنة. تأكد من اتصال الإنترنت وحاول تحديث الصفحة: " + err.message);
-  }
-}
+let editingExpenseId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('shipmentForm');
@@ -109,17 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const seaShippingFields = document.getElementById('seaShippingFields');
   const airShippingFields = document.getElementById('airShippingFields');
   const additionalCostsInput = document.getElementById('additionalCosts');
-  const bulkProfitPercentInput = document.getElementById('bulkProfitPercent');
-  const bulkExtraCostsInput = document.getElementById('bulkExtraCostsInput');
-  const applyBulkExtraCostsBtn = document.getElementById('applyBulkExtraCostsBtn');
-  const resetBulkExtraCostsBtn = document.getElementById('resetBulkExtraCostsBtn');
-  const sellingPriceLYDInput = document.getElementById('sellingPriceLYD');
+  const sellingPriceUSDInput = document.getElementById('sellingPriceUSD');
   const profitPreview = document.getElementById('profitPreview');
   const costPreviewLYD = document.getElementById('costPreviewLYD');
   const shipmentsContainer = document.getElementById('shipmentsContainer');
-  const totalQuantityCountElm = document.getElementById('totalQuantityCount');
-  const totalAirQuantityElm = document.getElementById('totalAirQuantity');
-  const totalSeaQuantityElm = document.getElementById('totalSeaQuantity');
   const totalShipmentsCount = document.getElementById('totalShipmentsCount');
 
   // Summary Elements
@@ -142,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Search & Filter
   const searchInput = document.getElementById('searchInput');
   const statusFilter = document.getElementById('statusFilter');
-  const shippingTypeFilter = document.getElementById('shippingTypeFilter');
 
   // Load user's preferred exchange rate from LocalStorage
   currentExchangeRate = parseFloat(localStorage.getItem('exchangeRate')) || 7.00;
@@ -193,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       shipmentsRef = ref(db, 'users/' + currentUserId + '/shipments');
+      expensesRef = ref(db, 'users/' + currentUserId + '/expenses');
       if (authOverlay) authOverlay.classList.add('hidden');
       if (appContainer) appContainer.style.display = 'block';
 
@@ -206,31 +128,30 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         renderShipments();
-      }, (error) => {
-        console.error("Firebase fetch error:", error);
-        alert("حدث خطأ في جلب الشحنات من قاعدة البيانات. قد يكون هناك مشكلة في الاتصال أو استنفاد للباقة: " + error.message);
       });
 
-      // Sync Exchange Rate from Firebase
-      onValue(ref(db, 'users/' + currentUserId + '/settings/exchangeRate'), (snap) => {
-        const rate = snap.val();
-        if (rate) {
-          currentExchangeRate = parseFloat(rate);
-          if (globalExchangeRateInput) {
-            globalExchangeRateInput.value = currentExchangeRate;
-            updateCostPreview();
-            renderShipments();
+      onValue(expensesRef, (snapshot) => {
+        const data = snapshot.val();
+        expenses = [];
+        if (data) {
+          for (let key in data) {
+            expenses.push({ id: key, ...data[key] });
           }
         }
+        if (typeof renderExpenses === 'function') renderExpenses();
       });
     } else {
       currentUserId = null;
       shipmentsRef = null;
+      expensesRef = null;
       shipments = [];
+      expenses = [];
       renderShipments();
+      if (typeof renderExpenses === 'function') renderExpenses();
       if (authOverlay) authOverlay.classList.remove('hidden');
       if (appContainer) appContainer.style.display = 'none';
       if (document.getElementById('cancelEditBtn')) document.getElementById('cancelEditBtn').click();
+      if (document.getElementById('cancelExpenseEditBtn')) document.getElementById('cancelExpenseEditBtn').click();
     }
   });
 
@@ -286,99 +207,75 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Calculate LYD automatically when USD typed
-  if(costUSDInput) costUSDInput.addEventListener('input', updateCostPreview);
+  costUSDInput.addEventListener('input', updateCostPreview);
   if(quantityInput) quantityInput.addEventListener('input', updateCostPreview);
   if(cbmQuantityInput) cbmQuantityInput.addEventListener('input', updateCostPreview);
   if(cbmPriceInput) cbmPriceInput.addEventListener('input', updateCostPreview);
   if(weightKGInput) weightKGInput.addEventListener('input', updateCostPreview);
   if(kgPriceInput) kgPriceInput.addEventListener('input', updateCostPreview);
   if(additionalCostsInput) additionalCostsInput.addEventListener('input', updateCostPreview);
-  if(sellingPriceLYDInput) {
-    sellingPriceLYDInput.addEventListener('input', () => {
-      isSellingPriceManual = true;
-      updateCostPreview();
-    });
-  }
+  if(sellingPriceUSDInput) sellingPriceUSDInput.addEventListener('input', updateCostPreview);
 
   // Toggle Shipping Fields
   const shippingTypeRadios = document.querySelectorAll('input[name="shippingType"]');
-  // Event Delegation for Edit and Delete
-  if (shipmentsContainer) {
-    shipmentsContainer.addEventListener('click', (e) => {
-      const editBtn = e.target.closest('.action-edit');
-      const deleteBtn = e.target.closest('.action-delete');
-      
-      if (editBtn) {
-        const id = editBtn.getAttribute('data-id');
-        editShipment(id);
-      } else if (deleteBtn) {
-        const id = deleteBtn.getAttribute('data-id');
-        deleteShipment(id);
-      }
-    });
-  }
-
   shippingTypeRadios.forEach(radio => {
     radio.addEventListener('change', (e) => {
       if (e.target.value === 'جوي') {
-        if (seaShippingFields) seaShippingFields.style.display = 'none';
-        if (airShippingFields) airShippingFields.style.display = 'grid';
+        seaShippingFields.style.display = 'none';
+        airShippingFields.style.display = 'grid';
       } else {
-        if (seaShippingFields) seaShippingFields.style.display = 'grid';
-        if (airShippingFields) airShippingFields.style.display = 'none';
+        seaShippingFields.style.display = 'grid';
+        airShippingFields.style.display = 'none';
       }
       updateCostPreview();
     });
   });
 
   // Search and filter listeners
-  let searchTimeout;
-  if(searchInput) {
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(renderShipments, 300);
-    });
-  }
+  if(searchInput) searchInput.addEventListener('input', renderShipments);
   if(statusFilter) statusFilter.addEventListener('change', renderShipments);
-  if(shippingTypeFilter) shippingTypeFilter.addEventListener('change', renderShipments);
 
   // Update Exchange Rate globally
   globalExchangeRateInput.addEventListener('input', (e) => {
-    const newRate = parseFloat(e.target.value) || 0;
-    currentExchangeRate = newRate;
-    localStorage.setItem('exchangeRate', newRate); // Local fallback
-    
-    // Save to Firebase for global sync if logged in
-    if (currentUserId) {
-      update(ref(db, 'users/' + currentUserId + '/settings'), { exchangeRate: newRate });
-    }
-    
+    currentExchangeRate = parseFloat(e.target.value) || 0;
+    localStorage.setItem('exchangeRate', currentExchangeRate); // Save preference
     updateCostPreview();
     renderShipments(); // Update all cards
+    if (typeof renderExpenses === 'function') {
+      renderExpenses();
+      const expenseAmountUSDInput = document.getElementById('expenseAmountUSD');
+      const expenseAmountLYDInput = document.getElementById('expenseAmountLYD');
+      if(expenseAmountUSDInput && expenseAmountLYDInput) {
+        const usd = parseFloat(expenseAmountUSDInput.value);
+        if(!isNaN(usd)) {
+          expenseAmountLYDInput.value = (usd * currentExchangeRate).toFixed(2);
+        }
+      }
+    }
   });
 
   function saveFormDraft() {
     if (editingShipmentId) return;
-    const getV = (id) => document.getElementById(id)?.value || '';
     const draft = {
-      itemName: getV('itemName'),
-      chinaCode: getV('chinaCode'),
-      trackingCode: getV('trackingCode'),
-      quantity: getV('quantity'),
-      costUSD: getV('costUSD'),
-      cbmQuantity: getV('cbmQuantity'),
-      cbmPrice: getV('cbmPrice'),
-      weightKG: getV('weightKG'),
-      kgPrice: getV('kgPrice'),
-      additionalCosts: getV('additionalCosts'),
-      sellingPriceLYD: getV('sellingPriceLYD'),
+      itemName: document.getElementById('itemName').value,
+      chinaCode: document.getElementById('chinaCode').value,
+      trackingCode: document.getElementById('trackingCode').value,
+      quantity: document.getElementById('quantity').value,
+      costUSD: document.getElementById('costUSD').value,
+      cbmQuantity: document.getElementById('cbmQuantity').value,
+      cbmPrice: document.getElementById('cbmPrice').value,
+      weightKG: document.getElementById('weightKG').value,
+      kgPrice: document.getElementById('kgPrice').value,
+      additionalCosts: document.getElementById('additionalCosts').value,
+      sellingPriceUSD: document.getElementById('sellingPriceUSD').value,
       shippingType: document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري',
-      status: getV('status'),
-      dateChina: getV('dateChina'),
-      dateDeparture: getV('dateDeparture'),
-      dateLibya: getV('dateLibya'),
-      shaheenCode: getV('shaheenCode'),
-      tripNumber: getV('tripNumber')
+      status: document.getElementById('status').value,
+      dateChina: document.getElementById('dateChina').value,
+      dateDeparture: document.getElementById('dateDeparture').value,
+      dateLibya: document.getElementById('dateLibya').value,
+      shaheenCode: document.getElementById('shaheenCode').value,
+      tripNumber: document.getElementById('tripNumber').value,
+      isPersonalUse: document.getElementById('isPersonalUse').checked
     };
     localStorage.setItem('shipmentDraft', JSON.stringify(draft));
   }
@@ -388,44 +285,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!dStr) return;
     try {
       const d = JSON.parse(dStr);
-      const setV = (id, val) => { const el = document.getElementById(id); if(el && val !== undefined) el.value = val; };
-      
-      setV('itemName', d.itemName);
-      setV('chinaCode', d.chinaCode);
-      setV('trackingCode', d.trackingCode);
-      setV('quantity', d.quantity);
-      setV('costUSD', d.costUSD);
-      setV('cbmQuantity', d.cbmQuantity);
-      setV('cbmPrice', d.cbmPrice);
-      setV('weightKG', d.weightKG);
-      setV('kgPrice', d.kgPrice);
-      setV('additionalCosts', d.additionalCosts);
-      setV('sellingPriceLYD', d.sellingPriceLYD);
-      
+      if(d.itemName) document.getElementById('itemName').value = d.itemName;
+      if(d.chinaCode) document.getElementById('chinaCode').value = d.chinaCode;
+      if(d.trackingCode) document.getElementById('trackingCode').value = d.trackingCode;
+      if(d.quantity) document.getElementById('quantity').value = d.quantity;
+      if(d.costUSD) document.getElementById('costUSD').value = d.costUSD;
+      if(d.cbmQuantity) document.getElementById('cbmQuantity').value = d.cbmQuantity;
+      if(d.cbmPrice) document.getElementById('cbmPrice').value = d.cbmPrice;
+      if(d.weightKG) document.getElementById('weightKG').value = d.weightKG;
+      if(d.kgPrice) document.getElementById('kgPrice').value = d.kgPrice;
+      if(d.additionalCosts) document.getElementById('additionalCosts').value = d.additionalCosts;
+      if(d.sellingPriceUSD) document.getElementById('sellingPriceUSD').value = d.sellingPriceUSD;
       if(d.shippingType) {
         const radio = document.querySelector(`input[name="shippingType"][value="${d.shippingType}"]`);
         if(radio) {
           radio.checked = true;
-          if(typeof updateCostPreview === 'function') {
-            // trigger display toggle manually to avoid potential issues
-            const sea = document.getElementById('seaShippingFields');
-            const air = document.getElementById('airShippingFields');
-            if(d.shippingType === 'جوي') {
-              if(sea) sea.style.display = 'none';
-              if(air) air.style.display = 'grid';
-            } else {
-              if(sea) sea.style.display = 'grid';
-              if(air) air.style.display = 'none';
-            }
-          }
+          radio.dispatchEvent(new Event('change'));
         }
       }
-      setV('status', d.status);
-      setV('dateChina', d.dateChina);
-      setV('dateDeparture', d.dateDeparture);
-      setV('dateLibya', d.dateLibya);
-      setV('shaheenCode', d.shaheenCode);
-      setV('tripNumber', d.tripNumber);
+      if(d.status) document.getElementById('status').value = d.status;
+      if(d.dateChina) document.getElementById('dateChina').value = d.dateChina;
+      if(d.dateDeparture) document.getElementById('dateDeparture').value = d.dateDeparture;
+      if(d.dateLibya) document.getElementById('dateLibya').value = d.dateLibya;
+      if(d.shaheenCode) document.getElementById('shaheenCode').value = d.shaheenCode;
+      if(d.tripNumber) document.getElementById('tripNumber').value = d.tripNumber;
     } catch(e) {}
   }
 
@@ -436,28 +319,28 @@ document.addEventListener('DOMContentLoaded', () => {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const itemName = document.getElementById('itemName')?.value || '';
-    const chinaCode = document.getElementById('chinaCode')?.value || '';
-    const trackingCode = document.getElementById('trackingCode')?.value || '';
-    const costUSD = costUSDInput ? parseFloat(costUSDInput.value) : 0;
-    const status = document.getElementById('status')?.value || 'تم الطلب وفي انتظار التجهيز';
+    const itemName = document.getElementById('itemName').value;
+    const chinaCode = document.getElementById('chinaCode').value;
+    const trackingCode = document.getElementById('trackingCode').value;
+    const costUSD = parseFloat(costUSDInput.value);
+    const status = document.getElementById('status').value;
     
     // Dates
-    const dateChina = document.getElementById('dateChina')?.value || '';
-    const dateDeparture = document.getElementById('dateDeparture')?.value || '';
-    const dateLibya = document.getElementById('dateLibya')?.value || '';
+    const dateChina = document.getElementById('dateChina').value;
+    const dateDeparture = document.getElementById('dateDeparture').value;
+    const dateLibya = document.getElementById('dateLibya').value;
 
     // Al-Shaheen info
-    const shaheenCode = document.getElementById('shaheenCode')?.value || '';
-    const tripNumber = document.getElementById('tripNumber')?.value || '';
+    const shaheenCode = document.getElementById('shaheenCode').value;
+    const tripNumber = document.getElementById('tripNumber').value;
 
-    const quantity = quantityInput ? (parseInt(quantityInput.value) || 1) : 1;
-    const cbmQuantity = cbmQuantityInput ? (parseFloat(cbmQuantityInput.value) || 0) : 0;
-    const cbmPrice = cbmPriceInput ? (parseFloat(cbmPriceInput.value) || 0) : 0;
-    const weightKG = weightKGInput ? (parseFloat(weightKGInput.value) || 0) : 0;
-    const kgPrice = kgPriceInput ? (parseFloat(kgPriceInput.value) || 0) : 0;
-    const additionalCosts = additionalCostsInput ? (parseFloat(additionalCostsInput.value) || 0) : 0;
-    const sellingPriceLYD = document.getElementById('sellingPriceLYD') ? (parseFloat(document.getElementById('sellingPriceLYD').value) || 0) : 0;
+    const quantity = parseInt(quantityInput.value) || 1;
+    const cbmQuantity = parseFloat(cbmQuantityInput.value) || 0;
+    const cbmPrice = parseFloat(cbmPriceInput.value) || 0;
+    const weightKG = parseFloat(weightKGInput.value) || 0;
+    const kgPrice = parseFloat(kgPriceInput.value) || 0;
+    const additionalCosts = parseFloat(additionalCostsInput.value) || 0;
+    const sellingPriceUSD = parseFloat(sellingPriceUSDInput.value) || 0;
     const shippingType = document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري';
 
     const imageInput = document.getElementById('itemImage');
@@ -484,8 +367,9 @@ document.addEventListener('DOMContentLoaded', () => {
       weightKG,
       kgPrice,
       additionalCosts,
-      sellingPriceLYD,
+      sellingPriceUSD,
       shippingType,
+      isPersonalUse: document.getElementById('isPersonalUse').checked,
       image: imageBase64,
       createdAt: new Date().toLocaleDateString('ar-LY'),
       timestamp: Date.now() // For sorting
@@ -507,22 +391,78 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       if(shipmentsRef) push(shipmentsRef, newShipment);
       form.reset();
-      isSellingPriceManual = false;
       localStorage.removeItem('shipmentDraft'); // Clear draft after successful creation
       updateCostPreview();
     }
   });
 
+  // Global edit function
+  window.editShipment = function(id) {
+    try {
+      const shipment = shipments.find(s => s.id === id);
+      if (!shipment) { alert('لم يتم العثور على الشحنة!'); return; }
+
+      editingShipmentId = id;
+      
+      // Populate form safely
+      const setVal = (elmId, val) => { const el = document.getElementById(elmId); if (el) el.value = val; };
+      
+      setVal('itemName', shipment.itemName || '');
+      setVal('chinaCode', shipment.chinaCode || '');
+      setVal('trackingCode', (shipment.trackingCode !== 'لم يتم الإصدار بعد') ? shipment.trackingCode : '');
+      setVal('costUSD', shipment.costUSD || '');
+      setVal('quantity', shipment.quantity || 1);
+      setVal('cbmQuantity', shipment.cbmQuantity || '');
+      setVal('cbmPrice', shipment.cbmPrice || '');
+      setVal('weightKG', shipment.weightKG || '');
+      setVal('kgPrice', shipment.kgPrice || '');
+      setVal('additionalCosts', shipment.additionalCosts || '');
+      setVal('sellingPriceUSD', shipment.sellingPriceUSD || '');
+      if(shipment.shippingType) {
+        const radio = document.querySelector(`input[name="shippingType"][value="${shipment.shippingType}"]`);
+        if(radio) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event('change'));
+        }
+      }
+      setVal('status', shipment.status || '');
+      setVal('dateChina', shipment.dateChina || '');
+      setVal('dateDeparture', shipment.dateDeparture || '');
+      setVal('dateLibya', shipment.dateLibya || '');
+      setVal('shaheenCode', shipment.shaheenCode || '');
+      setVal('tripNumber', shipment.tripNumber || '');
+      
+      const personalCb = document.getElementById('isPersonalUse');
+      if (personalCb) personalCb.checked = !!shipment.isPersonalUse;
+      
+      // Update buttons
+      const submitBtn = document.getElementById('submitBtn');
+      if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> حفظ التعديلات';
+        submitBtn.style.background = 'var(--status-ready)';
+      }
+      const cancelBtn = document.getElementById('cancelEditBtn');
+      if (cancelBtn) cancelBtn.style.display = 'inline-block';
+
+      if(typeof updateCostPreview === 'function') updateCostPreview();
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch(err) {
+      alert("حدث خطأ في النظام. يرجى تحديث الصفحة: " + err.message);
+    }
+  };
 
   document.getElementById('cancelEditBtn').addEventListener('click', () => {
     editingShipmentId = null;
-    isSellingPriceManual = false;
     form.reset();
     loadFormDraft();
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.innerHTML = '<i class="fa-solid fa-plus"></i> إضافة الشحنة';
     submitBtn.style.background = 'var(--primary-color)';
     document.getElementById('cancelEditBtn').style.display = 'none';
+    const personalCb = document.getElementById('isPersonalUse');
+    if (personalCb) personalCb.checked = false;
     updateCostPreview();
   });
 
@@ -538,13 +478,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Update LYD label directly
   function updateCostPreview() {
-    const usd = costUSDInput ? (parseFloat(costUSDInput.value) || 0) : 0;
+    const usd = parseFloat(costUSDInput.value) || 0;
     const shipType = document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري';
     let shippingUsd = 0;
     
     if (shipType === 'جوي') {
-      const kg = weightKGInput ? (parseFloat(weightKGInput.value) || 0) : 0;
-      const kgP = kgPriceInput ? (parseFloat(kgPriceInput.value) || 0) : 0;
+      const kg = parseFloat(weightKGInput.value) || 0;
+      const kgP = parseFloat(kgPriceInput.value) || 0;
       shippingUsd = kg * kgP;
     } else {
       const cbmQ = cbmQuantityInput ? (parseFloat(cbmQuantityInput.value) || 0) : 0;
@@ -557,129 +497,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // total is goods + shipping + additional
     const totalUsd = usd + shippingUsd + addCosts;
 
-    const lyd = Math.ceil(totalUsd * currentExchangeRate);
-    if (costPreviewLYD) costPreviewLYD.textContent = `${lyd} د.ل`;
-
-    const unitTotalCostLYD = (totalUsd * currentExchangeRate) / (quantityInput ? (parseInt(quantityInput.value) || 1) : 1);
-    
-    // Auto-calculate selling price (Cost + 50% - rounded up)
-    if (sellingPriceLYDInput && !isSellingPriceManual) {
-      sellingPriceLYDInput.value = Math.ceil(unitTotalCostLYD * 1.5);
-    }
+    const lyd = (totalUsd * currentExchangeRate).toFixed(2);
+    costPreviewLYD.textContent = `${lyd} د.ل`;
 
     // Profit Preview
-    const sellPriceLYD = sellingPriceLYDInput ? (parseFloat(sellingPriceLYDInput.value) || 0) : 0;
-    if (sellPriceLYD > 0 && quantityInput) {
-      const unitCostTotalLYD = (totalUsd * currentExchangeRate) / (parseInt(quantityInput.value) || 1);
-      const profitLYD = Math.ceil(sellPriceLYD - unitCostTotalLYD);
-      const profitUSD = profitLYD / currentExchangeRate;
-      const margin = ((profitLYD / sellPriceLYD) * 100).toFixed(1);
-      if (profitPreview) profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: ${profitLYD} د.ل ($${profitUSD.toFixed(2)}) - نسبة: ${margin}%`;
+    const sellPrice = parseFloat(sellingPriceUSDInput.value) || 0;
+    if (sellPrice > 0) {
+      const unitCostTotalUSD = totalUsd / (parseInt(quantityInput.value) || 1);
+      const profitUSD = sellPrice - unitCostTotalUSD;
+      const profitLYD = (profitUSD * currentExchangeRate).toFixed(2);
+      const margin = ((profitUSD / sellPrice) * 100).toFixed(1);
+      profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: $${profitUSD.toFixed(2)} (${profitLYD} د.ل) - نسبة: ${margin}%`;
     } else {
-      if (profitPreview) profitPreview.textContent = '';
+      profitPreview.textContent = '';
     }
   }
-  updateCostPreviewFn = updateCostPreview;
 
-
-  // Bulk Apply Profit to all existing shipments
-  if (applyAutoProfitBtn) {
-    applyAutoProfitBtn.addEventListener('click', async () => {
-      if (shipments.length === 0) return;
-      const profitPercent = parseFloat(bulkProfitPercentInput?.value) || 50;
-      if (!confirm(`هل أنت متأكد من تحديث أسعار البيع لجميع الشحنات المسجلة حالياً لتكون بتكلفة + ${profitPercent}% ربح؟ سيتم الكتابة فوق الأسعار القديمة.`)) return;
-
-      const updates = {};
-      const multiplier = 1 + (profitPercent / 100);
-
-      shipments.forEach(s => {
-        const qty = s.quantity || 1;
-        const totalShippingUsd = s.shippingType === 'جوي' 
-                                 ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
-                                 : (parseFloat(s.cbmQuantity) || 0) * (parseFloat(s.cbmPrice) || 0);
-        const totalCostUsd = (parseFloat(s.costUSD) || 0) + totalShippingUsd + (parseFloat(s.additionalCosts) || 0);
-        const unitTotalCostLYD = (totalCostUsd * currentExchangeRate) / qty;
-        const newSellingPriceLYD = Math.ceil(unitTotalCostLYD * multiplier);
-        
-        updates[`${s.id}/sellingPriceLYD`] = parseFloat(newSellingPriceLYD);
-      });
-
-      try {
-        await update(ref(db, 'users/' + currentUserId + '/shipments'), updates);
-        alert(`تم تحديث جميع أسعار المنتجات المسجلة بنسبة ربح ${profitPercent}% بنجاح!`);
-      } catch (err) {
-        alert('خطأ أثناء التحديث: ' + err.message);
+  // Global delete function
+  window.deleteShipment = async function(id) {
+    try {
+      if(confirm('هل أنت متأكد من حذف هذه الشحنة نهائياً من جميع الأجهزة؟')) {
+        const itemRef = ref(db, 'users/' + currentUserId + '/shipments/' + id);
+        await remove(itemRef); // Removes from Firebase Cloud ☁️
       }
-    });
-  }
-
-  // Bulk Distribute Extra Costs to displayed shipments
-  if (applyBulkExtraCostsBtn) {
-    applyBulkExtraCostsBtn.addEventListener('click', async () => {
-      // Get the currently filtered shipments (what's visible)
-      let visibleShipments = [...shipments];
-      if (statusFilter && statusFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.status === statusFilter.value);
-      if (shippingTypeFilter && shippingTypeFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.shippingType === shippingTypeFilter.value);
-      if (searchInput && searchInput.value.trim() !== '') {
-        const q = searchInput.value.toLowerCase().trim();
-        visibleShipments = visibleShipments.filter(s => (s.itemName && s.itemName.toLowerCase().includes(q)) || (s.chinaCode && s.chinaCode.toLowerCase().includes(q)));
-      }
-
-      // Filter out Personal Use items from the distribution
-      const businessShipments = visibleShipments.filter(s => s.status !== 'استخدام شخصي');
-
-      if (businessShipments.length === 0) { alert('لا توجد شحنات (تجارية) معروضة لتوزيع التكاليف عليها!'); return; }
-
-      const totalAmount = parseFloat(bulkExtraCostsInput?.value) || 0;
-      if (totalAmount <= 0) { alert('يرجى إدخال مبلغ صحيح للتوزيع.'); return; }
-
-      const sharePerProduct = totalAmount / businessShipments.length;
-      
-      if (!confirm(`سيتم توزيع مبلغ $${totalAmount} على ${businessShipments.length} منتج تجاري (تم استبعاد الشخصي). نصيب كل منتج هو $${sharePerProduct.toFixed(2)}. هل تريد الاستمرار؟`)) return;
-
-      const updates = {};
-      businessShipments.forEach(s => {
-        const currentExtra = parseFloat(s.additionalCosts) || 0;
-        updates[`${s.id}/additionalCosts`] = currentExtra + sharePerProduct;
-      });
-
-      try {
-        await update(ref(getDatabase(), 'users/' + currentUserId + '/shipments'), updates);
-        alert('تم توزيع التكاليف الإضافية بنجاح على جميع المنتجات المعروضة!');
-        if(bulkExtraCostsInput) bulkExtraCostsInput.value = '';
-      } catch (err) {
-        alert('خطأ أثناء التوزيع: ' + err.message);
-      }
-    });
-  }
-
-  // Bulk Reset Extra Costs
-  if (resetBulkExtraCostsBtn) {
-    resetBulkExtraCostsBtn.addEventListener('click', async () => {
-      let visibleShipments = [...shipments];
-      if (statusFilter && statusFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.status === statusFilter.value);
-      if (shippingTypeFilter && shippingTypeFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.shippingType === shippingTypeFilter.value);
-      if (searchInput && searchInput.value.trim() !== '') {
-        const q = searchInput.value.toLowerCase().trim();
-        visibleShipments = visibleShipments.filter(s => (s.itemName && s.itemName.toLowerCase().includes(q)) || (s.chinaCode && s.chinaCode.toLowerCase().includes(q)));
-      }
-
-      if (visibleShipments.length === 0) return;
-      if (!confirm(`هل أنت متأكد من تصفير (مسح) جميع التكاليف الإضافية لـ ${visibleShipments.length} منتج معروض حالياً؟ لا يمكن التراجع.`)) return;
-
-      const updates = {};
-      visibleShipments.forEach(s => {
-        updates[`${s.id}/additionalCosts`] = 0;
-      });
-
-      try {
-        await update(ref(getDatabase(), 'users/' + currentUserId + '/shipments'), updates);
-        alert('تم تصفير التكاليف بنجاح!');
-      } catch (err) {
-        alert('خطأ أثناء التصفير: ' + err.message);
-      }
-    });
-  }
+    } catch(err) {
+      alert("فشل في حذف الشحنة. تأكد من اتصال الإنترنت وحاول تحديث الصفحة: " + err.message);
+    }
+  };
 
   // Export to Excel (CSV)
   const exportBtn = document.getElementById('exportExcelBtn');
@@ -693,9 +537,6 @@ document.addEventListener('DOMContentLoaded', () => {
       let toExport = shipments;
       if (statusFilter && statusFilter.value !== 'الكل') {
         toExport = toExport.filter(s => s.status === statusFilter.value);
-      }
-      if (shippingTypeFilter && shippingTypeFilter.value !== 'الكل') {
-        toExport = toExport.filter(s => s.shippingType === shippingTypeFilter.value);
       }
       if (searchInput && searchInput.value.trim() !== '') {
         const q = searchInput.value.toLowerCase().trim();
@@ -729,8 +570,6 @@ document.addEventListener('DOMContentLoaded', () => {
       let csvContent = '\uFEFF' + headers.join(',') + '\n';
       
       toExport.forEach(s => {
-        // Option to exclude personal use from export if needed, but usually export includes all
-        // if (s.status === 'استخدام شخصي') return; 
         const qty = s.quantity || 1;
         const cbm = s.cbmQuantity || 0;
         const cbmp = s.cbmPrice || 0;
@@ -743,9 +582,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const unitCostWithShippingUsd = totalCostUsd / qty;
         const lydCost = totalCostUsd * currentExchangeRate;
 
-        const sellPriceLYD = parseFloat(s.sellingPriceLYD) || 0;
-        const sellPriceUSD = sellPriceLYD / currentExchangeRate;
-        const profitPerUnit = sellPriceUSD > 0 ? (sellPriceUSD - unitCostWithShippingUsd) : 0;
+        const sellPrice = parseFloat(s.sellingPriceUSD) || 0;
+        const profitPerUnit = sellPrice > 0 ? (sellPrice - unitCostWithShippingUsd) : 0;
         const totalProfit = profitPerUnit * qty;
 
         const row = [
@@ -765,9 +603,9 @@ document.addEventListener('DOMContentLoaded', () => {
           s.costUSD.toFixed(2),
           unitCostUsd.toFixed(2),
           unitCostWithShippingUsd.toFixed(2),
-          sellPriceLYD.toFixed(2),
-          (profitPerUnit * currentExchangeRate).toFixed(2),
-          (totalProfit * currentExchangeRate).toFixed(2),
+          sellPrice.toFixed(2),
+          profitPerUnit.toFixed(2),
+          totalProfit.toFixed(2),
           totalCostUsd.toFixed(2),
           lydCost.toFixed(2),
           `"${(s.status || '').replace(/"/g, '""')}"`
@@ -810,11 +648,6 @@ document.addEventListener('DOMContentLoaded', () => {
       filteredShipments = filteredShipments.filter(s => s.status === statusFilter.value);
     }
     
-    // Apply Shipping Type Filter
-    if (shippingTypeFilter && shippingTypeFilter.value !== 'الكل') {
-      filteredShipments = filteredShipments.filter(s => s.shippingType === shippingTypeFilter.value);
-    }
-    
     // Apply Search
     if (searchInput && searchInput.value.trim() !== '') {
       const q = searchInput.value.toLowerCase().trim();
@@ -835,8 +668,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Sort newest first
-    const fragment = document.createDocumentFragment();
-
     filteredShipments.sort((a,b) => b.timestamp - a.timestamp).forEach(shipment => {
       const qty = shipment.quantity || 1;
       const cbm = shipment.cbmQuantity || 0;
@@ -851,28 +682,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const lydCost = (totalCostUsd * currentExchangeRate).toFixed(2);
       const unitCostLyd = (unitCostUsd * currentExchangeRate).toFixed(2);
-      const unitCostWithShippingLydNum = unitCostWithShippingUsd * currentExchangeRate;
-      const unitCostWithShippingLyd = unitCostWithShippingLydNum.toFixed(2);
+      const unitCostWithShippingLyd = (unitCostWithShippingUsd * currentExchangeRate).toFixed(2);
       
       const shipTypeIcon = shipment.shippingType === 'جوي' ? 'fa-plane' : 'fa-ship';
 
       let statusColor = 'var(--status-transit)';
-      if (shipment.status?.includes('تم الطلب')) statusColor = 'var(--status-pending)';
-      if (shipment.status?.includes('نفكر نشريه')) statusColor = '#a855f7'; // Purple for planning
-      if (shipment.status?.includes('الجمارك') || shipment.status?.includes('رايحة')) statusColor = 'var(--status-customs)'; // red color
-      if (shipment.status?.includes('جاهزة') || shipment.status?.includes('الاستلام')) statusColor = 'var(--status-ready)';
+      if (shipment.status.includes('تم الطلب')) statusColor = 'var(--status-pending)';
+      if (shipment.status.includes('نفكر نشريه')) statusColor = '#a855f7'; // Purple for planning
+      if (shipment.status.includes('الجمارك') || shipment.status.includes('رايحة')) statusColor = 'var(--status-customs)'; // red color
+      if (shipment.status.includes('جاهزة') || shipment.status.includes('الاستلام')) statusColor = 'var(--status-ready)';
 
       const card = document.createElement('div');
-      card.className = 'shipment-card';
+      card.className = 'shipment-card fade-in';
       card.innerHTML = `
         <div class="card-image-holder">
           <div class="card-actions" style="position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; gap: 8px;">
-            <button class="edit-btn action-edit" data-id="${shipment.id}" title="تعديل الشحنة" style="background: var(--status-ready); color: white; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"><i class="fa-solid fa-pen"></i></button>
-            <button class="delete-btn action-delete" data-id="${shipment.id}" title="حذف الشحنة من السحابة" style="background: var(--status-pending); color: white; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: static;"><i class="fa-solid fa-trash"></i></button>
+            <button class="edit-btn" onclick="editShipment('${shipment.id}')" title="تعديل الشحنة" style="background: var(--status-ready); color: white; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"><i class="fa-solid fa-pen"></i></button>
+            <button class="delete-btn" onclick="deleteShipment('${shipment.id}')" title="حذف الشحنة من السحابة" style="background: var(--status-pending); color: white; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: static;"><i class="fa-solid fa-trash"></i></button>
           </div>
           <div class="status-badge" style="color: ${statusColor}; border-color: ${statusColor}">
             ${shipment.status}
           </div>
+          ${shipment.isPersonalUse ? `
+          <div class="status-badge" style="color: #60a5fa; border-color: #60a5fa; top: 45px; background: rgba(59, 130, 246, 0.1);">
+            <i class="fa-solid fa-user-tag"></i> استخدام شخصي
+          </div>
+          ` : ''}
           <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; z-index: 5;">
             <i class="fa-solid ${shipTypeIcon}"></i> شحن ${shipment.shippingType || 'بحري'}
           </div>
@@ -906,60 +741,52 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="card-price" style="flex-direction: column; align-items: stretch; gap: 8px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted); align-items: center;">
               <span>تكلفة القطعة (بدون شحن):</span>
-              <span dir="ltr">$${unitCostUsd.toFixed(2)} &nbsp;|&nbsp; ${Math.ceil(unitCostUsd * currentExchangeRate)} د.ل</span>
+              <span dir="ltr">$${unitCostUsd.toFixed(2)} &nbsp;|&nbsp; ${unitCostLyd} د.ل</span>
             </div>
             ${(totalShippingUsd > 0 || shipment.additionalCosts > 0) ? `
             <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted); align-items: center;">
               <span>تكلفة القطعة (بالشحن والإضافي):</span>
-              <span dir="ltr" style="color: var(--status-ready); font-weight: 700;">$${unitCostWithShippingUsd.toFixed(2)} &nbsp;|&nbsp; ${Math.ceil(unitCostWithShippingUsd * currentExchangeRate)} د.ل</span>
+              <span dir="ltr" style="color: var(--status-ready); font-weight: 700;">$${unitCostWithShippingUsd.toFixed(2)} &nbsp;|&nbsp; ${unitCostWithShippingLyd} د.ل</span>
             </div>
             ` : ''}
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 4px;">
               <div class="usd">الإجمالي الكلي: $${totalCostUsd.toFixed(2)}</div>
-              <div class="lyd" style="font-size: 1.4rem;">${Math.ceil(totalCostUsd * currentExchangeRate)} د.ل</div>
+              <div class="lyd" style="font-size: 1.4rem;">${lydCost} د.ل</div>
             </div>
 
-            ${parseFloat(shipment.sellingPriceLYD) > 0 ? `
+            ${parseFloat(shipment.sellingPriceUSD) > 0 ? `
             <div style="margin-top: 10px; padding: 10px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <span style="font-size: 0.9rem; color: var(--text-muted);">سعر البيع للقطعة:</span>
-                <span style="font-weight: 700; color: #10b981;">${Math.ceil(parseFloat(shipment.sellingPriceLYD))} د.ل ($${(parseFloat(shipment.sellingPriceLYD) / currentExchangeRate).toFixed(2)})</span>
+                <span style="font-weight: 700; color: #10b981;">$${parseFloat(shipment.sellingPriceUSD).toFixed(2)} (${(parseFloat(shipment.sellingPriceUSD) * currentExchangeRate).toFixed(2)} د.ل)</span>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 0.9rem; color: var(--text-muted);">صافي ربح القطعة:</span>
-                <span style="font-weight: 700; color: var(--primary-accent);">${Math.ceil(parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum)} د.ل ($${((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) / currentExchangeRate).toFixed(2)})</span>
+                <span style="font-weight: 700; color: var(--primary-accent);">$${(parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd).toFixed(2)} (${((parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd) * currentExchangeRate).toFixed(2)} د.ل)</span>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; border-top: 1px solid rgba(16, 185, 129, 0.2); padding-top: 5px;">
                 <span style="font-size: 0.9rem; font-weight: bold;">إجمالي الربح المتوقع:</span>
-                <span style="font-size: 1.1rem; font-weight: 800; color: #10b981;">${Math.ceil((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) * qty)} د.ل ($${(((parseFloat(shipment.sellingPriceLYD) - unitCostWithShippingLydNum) * qty) / currentExchangeRate).toFixed(2)})</span>
+                <span style="font-size: 1.1rem; font-weight: 800; color: #10b981;">$${((parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd) * qty).toFixed(2)} (${(((parseFloat(shipment.sellingPriceUSD) - unitCostWithShippingUsd) * qty) * currentExchangeRate).toFixed(2)} د.ل)</span>
               </div>
             </div>
             ` : ''}
           </div>
         </div>
       `;
-      fragment.appendChild(card);
+      shipmentsContainer.appendChild(card);
     });
-
-    shipmentsContainer.appendChild(fragment);
 
     updateFinancialSummary(filteredShipments);
   }
 
   function updateFinancialSummary(filteredList) {
-    let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0, totalSales = 0, totalProfit = 0, totalQuantity = 0, totalAirQty = 0, totalSeaQty = 0;
+    let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0, totalSales = 0, totalProfit = 0;
 
     filteredList.forEach(s => {
-      // Exclude "Thinking of buying" and "Personal Use" from totals
-      if (s.status === 'نفكر نشريه' || s.status === 'استخدام شخصي') return;
+      // Exclude "Thinking of buying" from totals
+      if (s.status === 'نفكر نشريه') return;
 
-      const qty = parseFloat(s.quantity) || 0;
-      totalQuantity += qty;
-      if (s.shippingType === 'جوي') {
-        totalAirQty += qty;
-      } else {
-        totalSeaQty += qty;
-      }
+      const qty = parseFloat(s.quantity) || 1;
       totalGoods += parseFloat(s.costUSD) || 0;
       const shipCost = s.shippingType === 'جوي' 
                        ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
@@ -975,11 +802,10 @@ document.addEventListener('DOMContentLoaded', () => {
       totalExtra += extra;
 
       const totalCostUsd = (parseFloat(s.costUSD) || 0) + shipCost + extra;
-      const sellPriceLYD = parseFloat(s.sellingPriceLYD) || 0;
-      if (sellPriceLYD > 0) {
-        const sellPriceUSD = sellPriceLYD / currentExchangeRate;
-        totalSales += sellPriceUSD * qty;
-        totalProfit += (sellPriceUSD * qty) - totalCostUsd;
+      const sellPrice = parseFloat(s.sellingPriceUSD) || 0;
+      if (sellPrice > 0 && !s.isPersonalUse) {
+        totalSales += sellPrice * qty;
+        totalProfit += (sellPrice * qty) - totalCostUsd;
       }
     });
 
@@ -987,30 +813,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const grandTotalUSD = totalGoods + totalShipping + totalExtra;
     const grandTotalLYD = grandTotalUSD * currentExchangeRate;
 
-    if(totalQuantityCountElm) totalQuantityCountElm.textContent = totalQuantity.toLocaleString();
-    if(totalAirQuantityElm) totalAirQuantityElm.textContent = totalAirQty.toLocaleString();
-    if(totalSeaQuantityElm) totalSeaQuantityElm.textContent = totalSeaQty.toLocaleString();
-
     if(totalGoodsUSDElm) totalGoodsUSDElm.textContent = `$${totalGoods.toFixed(2)}`;
-    if(totalGoodsLYDElm) totalGoodsLYDElm.textContent = `${Math.ceil(totalGoods * currentExchangeRate)} د.ل`;
+    if(totalGoodsLYDElm) totalGoodsLYDElm.textContent = `${(totalGoods * currentExchangeRate).toFixed(2)} د.ل`;
 
     if(totalSeaShippingUSDElm) totalSeaShippingUSDElm.textContent = `$${totalSeaShipping.toFixed(2)}`;
-    if(totalSeaShippingLYDElm) totalSeaShippingLYDElm.textContent = `${Math.ceil(totalSeaShipping * currentExchangeRate)} د.ل`;
+    if(totalSeaShippingLYDElm) totalSeaShippingLYDElm.textContent = `${(totalSeaShipping * currentExchangeRate).toFixed(2)} د.ل`;
 
     if(totalAirShippingUSDElm) totalAirShippingUSDElm.textContent = `$${totalAirShipping.toFixed(2)}`;
-    if(totalAirShippingLYDElm) totalAirShippingLYDElm.textContent = `${Math.ceil(totalAirShipping * currentExchangeRate)} د.ل`;
+    if(totalAirShippingLYDElm) totalAirShippingLYDElm.textContent = `${(totalAirShipping * currentExchangeRate).toFixed(2)} د.ل`;
 
     if(totalExtraUSDElm) totalExtraUSDElm.textContent = `$${totalExtra.toFixed(2)}`;
-    if(totalExtraLYDElm) totalExtraLYDElm.textContent = `${Math.ceil(totalExtra * currentExchangeRate)} د.ل`;
+    if(totalExtraLYDElm) totalExtraLYDElm.textContent = `${(totalExtra * currentExchangeRate).toFixed(2)} د.ل`;
 
     if(totalSalesUSDElm) totalSalesUSDElm.textContent = `$${totalSales.toFixed(2)}`;
-    if(totalSalesLYDElm) totalSalesLYDElm.textContent = `${Math.ceil(totalSales * currentExchangeRate)} د.ل`;
+    if(totalSalesLYDElm) totalSalesLYDElm.textContent = `${(totalSales * currentExchangeRate).toFixed(2)} د.ل`;
 
     if(totalProfitUSDElm) totalProfitUSDElm.textContent = `$${totalProfit.toFixed(2)}`;
-    if(totalProfitLYDElm) totalProfitLYDElm.textContent = `${Math.ceil(totalProfit * currentExchangeRate)} د.ل`;
+    if(totalProfitLYDElm) totalProfitLYDElm.textContent = `${(totalProfit * currentExchangeRate).toFixed(2)} د.ل`;
 
     if(grandTotalUSDElm) grandTotalUSDElm.textContent = `$${grandTotalUSD.toFixed(2)}`;
-    if(grandTotalLYDElm) grandTotalLYDElm.textContent = `${Math.ceil(grandTotalLYD)} د.ل`;
+    if(grandTotalLYDElm) grandTotalLYDElm.textContent = `${grandTotalLYD.toFixed(2)} د.ل`;
   }
 
   // Admin Panel Setup
@@ -1131,5 +953,202 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  updateCostPreview();
+    updateCostPreview();
+
+    // --- Tabs Logic ---
+    const tabShipments = document.getElementById('tabShipments');
+    const tabExpenses = document.getElementById('tabExpenses');
+    const shipmentsView = document.getElementById('shipmentsView');
+    const expensesView = document.getElementById('expensesView');
+
+    if (tabShipments && tabExpenses) {
+      tabShipments.addEventListener('click', () => {
+        tabShipments.classList.add('active');
+        tabShipments.style.color = 'var(--primary-accent)';
+        tabShipments.style.borderBottomColor = 'var(--primary-accent)';
+        tabExpenses.classList.remove('active');
+        tabExpenses.style.color = 'var(--text-muted)';
+        tabExpenses.style.borderBottomColor = 'transparent';
+        shipmentsView.classList.remove('hidden');
+        expensesView.classList.add('hidden');
+      });
+
+      tabExpenses.addEventListener('click', () => {
+        tabExpenses.classList.add('active');
+        tabExpenses.style.color = 'var(--primary-accent)';
+        tabExpenses.style.borderBottomColor = 'var(--primary-accent)';
+        tabShipments.classList.remove('active');
+        tabShipments.style.color = 'var(--text-muted)';
+        tabShipments.style.borderBottomColor = 'transparent';
+        expensesView.classList.remove('hidden');
+        shipmentsView.classList.add('hidden');
+      });
+    }
+
+    // --- Expenses Logic ---
+    const expenseForm = document.getElementById('expenseForm');
+    const expenseTitleInput = document.getElementById('expenseTitle');
+    const expenseCategoryInput = document.getElementById('expenseCategory');
+    const expenseAmountUSDInput = document.getElementById('expenseAmountUSD');
+    const expenseAmountLYDInput = document.getElementById('expenseAmountLYD');
+    const expenseDateInput = document.getElementById('expenseDate');
+    const expensesContainer = document.getElementById('expensesContainer');
+    const totalExpensesUSDElm = document.getElementById('totalExpensesUSD');
+    const totalExpensesLYDElm = document.getElementById('totalExpensesLYD');
+    const searchExpenseInput = document.getElementById('searchExpenseInput');
+    const expenseCategoryFilter = document.getElementById('expenseCategoryFilter');
+
+    if(expenseAmountUSDInput && expenseAmountLYDInput) {
+      expenseAmountUSDInput.addEventListener('input', () => {
+        const usd = parseFloat(expenseAmountUSDInput.value);
+        if(!isNaN(usd)) {
+          expenseAmountLYDInput.value = (usd * currentExchangeRate).toFixed(2);
+        } else {
+          expenseAmountLYDInput.value = '';
+        }
+      });
+      
+      expenseAmountLYDInput.addEventListener('input', () => {
+        const lyd = parseFloat(expenseAmountLYDInput.value);
+        if(!isNaN(lyd)) {
+          expenseAmountUSDInput.value = (lyd / currentExchangeRate).toFixed(2);
+        } else {
+          expenseAmountUSDInput.value = '';
+        }
+      });
+    }
+
+    if(searchExpenseInput) searchExpenseInput.addEventListener('input', renderExpenses);
+    if(expenseCategoryFilter) expenseCategoryFilter.addEventListener('change', renderExpenses);
+
+    if (expenseForm) {
+      expenseForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const expense = {
+          title: expenseTitleInput.value,
+          category: expenseCategoryInput.value,
+          amountUSD: parseFloat(expenseAmountUSDInput.value) || 0,
+          date: expenseDateInput.value,
+          timestamp: Date.now()
+        };
+
+        if (editingExpenseId) {
+          update(ref(db, 'users/' + currentUserId + '/expenses/' + editingExpenseId), expense);
+          document.getElementById('cancelExpenseEditBtn').click();
+        } else {
+          if (expensesRef) push(expensesRef, expense);
+          expenseForm.reset();
+        }
+      });
+    }
+
+    const cancelExpenseEditBtn = document.getElementById('cancelExpenseEditBtn');
+    if(cancelExpenseEditBtn) {
+      cancelExpenseEditBtn.addEventListener('click', () => {
+        editingExpenseId = null;
+        expenseForm.reset();
+        cancelExpenseEditBtn.style.display = 'none';
+        const btn = document.getElementById('expenseSubmitBtn');
+        if(btn) {
+          btn.innerHTML = '<i class="fa-solid fa-plus"></i> حفظ المصروف';
+          btn.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+        }
+      });
+    }
+
+    window.editExpense = function(id) {
+      const exp = expenses.find(e => e.id === id);
+      if(!exp) return;
+      editingExpenseId = id;
+      expenseTitleInput.value = exp.title || '';
+      expenseCategoryInput.value = exp.category || 'أخرى';
+      expenseAmountUSDInput.value = exp.amountUSD || '';
+      expenseDateInput.value = exp.date || '';
+      
+      const usd = parseFloat(exp.amountUSD);
+      if(!isNaN(usd) && expenseAmountLYDInput) {
+        expenseAmountLYDInput.value = (usd * currentExchangeRate).toFixed(2);
+      } else if (expenseAmountLYDInput) {
+        expenseAmountLYDInput.value = '';
+      }
+
+      cancelExpenseEditBtn.style.display = 'inline-block';
+      const btn = document.getElementById('expenseSubmitBtn');
+      btn.innerHTML = '<i class="fa-solid fa-save"></i> حفظ التعديل';
+      btn.style.background = 'var(--status-ready)';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.deleteExpense = async function(id) {
+      if(confirm('هل أنت متأكد من حذف هذا المصروف؟')) {
+        await remove(ref(db, 'users/' + currentUserId + '/expenses/' + id));
+      }
+    };
+
+    window.renderExpenses = function() {
+      if(!expensesContainer) return;
+      expensesContainer.innerHTML = '';
+      let totalUsd = 0;
+
+      let filtered = [...expenses];
+      if (expenseCategoryFilter && expenseCategoryFilter.value !== 'الكل') {
+        filtered = filtered.filter(e => {
+          // extract base category name without emoji
+          return e.category.includes(expenseCategoryFilter.value);
+        });
+      }
+
+      if (searchExpenseInput && searchExpenseInput.value.trim() !== '') {
+        const q = searchExpenseInput.value.toLowerCase().trim();
+        filtered = filtered.filter(e => e.title && e.title.toLowerCase().includes(q));
+      }
+
+      if (filtered.length === 0) {
+        expensesContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">لا توجد مصروفات مسجلة.</p>';
+        if(totalExpensesUSDElm) totalExpensesUSDElm.textContent = '$0.00';
+        if(totalExpensesLYDElm) totalExpensesLYDElm.textContent = '0.00 د.ل';
+        return;
+      }
+
+      filtered.sort((a, b) => b.timestamp - a.timestamp).forEach(exp => {
+        totalUsd += parseFloat(exp.amountUSD) || 0;
+        const lyd = ((parseFloat(exp.amountUSD) || 0) * currentExchangeRate).toFixed(2);
+        
+        let icon = 'fa-file-invoice';
+        if(exp.category.includes('بحري')) icon = 'fa-ship';
+        if(exp.category.includes('جوي')) icon = 'fa-plane';
+        if(exp.category.includes('تغليف')) icon = 'fa-box';
+        if(exp.category.includes('نقل')) icon = 'fa-truck';
+        if(exp.category.includes('جمارك')) icon = 'fa-building-shield';
+
+        const card = document.createElement('div');
+        card.className = 'glass-panel fade-in';
+        card.style.padding = '1.5rem';
+        card.style.borderLeft = '4px solid #ef4444';
+        card.style.position = 'relative';
+        card.innerHTML = `
+          <div style="position: absolute; top: 10px; left: 10px; display: flex; gap: 8px;">
+            <button onclick="editExpense('${exp.id}')" style="background: var(--status-ready); color: white; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;"><i class="fa-solid fa-pen"></i></button>
+            <button onclick="deleteExpense('${exp.id}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
+          </div>
+          <h3 style="margin-bottom: 10px; color: var(--primary-accent);"><i class="fa-solid ${icon}"></i> ${exp.title}</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-tags"></i> التصنيف: <strong>${exp.category}</strong></p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;"><i class="fa-solid fa-calendar"></i> التاريخ: <strong>${exp.date || 'غير محدد'}</strong></p>
+          <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+             <span style="color: var(--text-muted); font-size: 0.9rem;">المبلغ:</span>
+             <span style="font-size: 1.3rem; font-weight: 800; color: #ef4444;">$${parseFloat(exp.amountUSD).toFixed(2)} <span style="font-size: 0.9rem; color: var(--text-muted);">(${lyd} د.ل)</span></span>
+          </div>
+        `;
+        expensesContainer.appendChild(card);
+      });
+
+      if(totalExpensesUSDElm) totalExpensesUSDElm.textContent = `$${totalUsd.toFixed(2)}`;
+      if(totalExpensesLYDElm) totalExpensesLYDElm.textContent = `${(totalUsd * currentExchangeRate).toFixed(2)} د.ل`;
+    };
+
+    // Render initially if already loaded
+    if(expenses.length > 0 && typeof renderExpenses === 'function') {
+      renderExpenses();
+    }
 });
