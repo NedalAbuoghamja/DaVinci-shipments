@@ -83,8 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const totalSalesLYDElm = document.getElementById('totalSalesLYD');
   const totalProfitUSDElm = document.getElementById('totalProfitUSD');
   const totalProfitLYDElm = document.getElementById('totalProfitLYD');
-  const actualProfitUSDElm = document.getElementById('actualProfitUSD');
-  const actualProfitLYDElm = document.getElementById('actualProfitLYD');
   const expectedSalesUSDElm = document.getElementById('expectedSalesUSD');
   const expectedSalesLYDElm = document.getElementById('expectedSalesLYD');
   
@@ -1031,19 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if(expectedSalesUSDElm) expectedSalesUSDElm.textContent = `$${expectedSales.toFixed(2)}`;
       if(expectedSalesLYDElm) expectedSalesLYDElm.textContent = `${(expectedSales * currentExchangeRate).toFixed(2)} د.ل`;
 
-      const actualProfitUSD = totalSales - grandTotalUSD;
-      const actualProfitLYD = actualProfitUSD * currentExchangeRate;
 
-      if(actualProfitUSDElm) {
-        actualProfitUSDElm.textContent = actualProfitUSD < 0 
-          ? `-$${Math.abs(actualProfitUSD).toFixed(2)}` 
-          : `$${actualProfitUSD.toFixed(2)}`;
-      }
-      if(actualProfitLYDElm) {
-        actualProfitLYDElm.textContent = actualProfitLYD < 0 
-          ? `-${Math.abs(actualProfitLYD).toFixed(2)} د.ل` 
-          : `${actualProfitLYD.toFixed(2)} د.ل`;
-      }
 
       if(grandTotalUSDElm) grandTotalUSDElm.textContent = `$${grandTotalUSD.toFixed(2)}`;
       if(grandTotalLYDElm) grandTotalLYDElm.textContent = `${grandTotalLYD.toFixed(2)} د.ل`;
