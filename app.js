@@ -763,16 +763,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (visibleShipments.length === 0) { alert('لا توجد شحنات تجارية (غير مخصصة للاستخدام الشخصي) معروضة لتوزيع التكاليف عليها!'); return; }
 
-      const totalAmount = parseFloat(document.getElementById('bulkExtraCostsInput')?.value) || 0;
-      if (totalAmount <= 0) { alert('يرجى إدخال مبلغ صحيح للتوزيع.'); return; }
+      const totalAmountLYD = parseFloat(document.getElementById('bulkExtraCostsInput')?.value) || 0;
+      if (totalAmountLYD <= 0) { alert('يرجى إدخال مبلغ صحيح للتوزيع.'); return; }
 
-      const sharePerProduct = totalAmount / visibleShipments.length;
+      const totalAmountUSD = totalAmountLYD / currentExchangeRate;
+      const sharePerProductUSD = totalAmountUSD / visibleShipments.length;
+      const sharePerProductLYD = totalAmountLYD / visibleShipments.length;
       
-      if (!confirm(`سيتم توزيع مبلغ $${totalAmount} على ${visibleShipments.length} منتج تجاري معروض حالياً. نصيب كل منتج (شحنة) هو $${sharePerProduct.toFixed(2)}. هل تريد الاستمرار؟`)) return;
+      if (!confirm(`سيتم توزيع مبلغ ${totalAmountLYD.toFixed(2)} د.ل (ما يعادل $${totalAmountUSD.toFixed(2)}) على ${visibleShipments.length} منتج تجاري معروض حالياً.\nنصيب كل منتج (شحنة) هو ${sharePerProductLYD.toFixed(2)} د.ل (ما يعادل $${sharePerProductUSD.toFixed(2)}).\nهل تريد الاستمرار؟`)) return;
 
       const updates = {};
       visibleShipments.forEach(s => {
-        updates[`${s.id}/additionalCosts`] = sharePerProduct;
+        updates[`${s.id}/additionalCosts`] = sharePerProductUSD;
       });
 
       try {
