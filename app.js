@@ -787,6 +787,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Bulk Reset Extra Costs for displayed shipments
+  const resetBulkExtraCostsBtn = document.getElementById('resetBulkExtraCostsBtn');
+  if (resetBulkExtraCostsBtn) {
+    resetBulkExtraCostsBtn.addEventListener('click', async () => {
+      // Get the currently filtered shipments (what's visible)
+      let visibleShipments = [...shipments];
+      if (statusFilter && statusFilter.value !== 'الكل') {
+        if (statusFilter.value === 'استخدام شخصي') {
+          visibleShipments = visibleShipments.filter(s => s.isPersonalUse || s.status === 'استخدام شخصي');
+        } else {
+          visibleShipments = visibleShipments.filter(s => s.status === statusFilter.value);
+        }
+      }
+      if (searchInput && searchInput.value.trim() !== '') {
+        const q = searchInput.value.toLowerCase().trim();
+        visibleShipments = visibleShipments.filter(s => {
+          if (s.isPersonalUse || s.status === 'استخدام شخصي') return false;
+          return (s.itemName && s.itemName.toLowerCase().includes(q)) ||
+                 (s.chinaCode && s.chinaCode.toLowerCase().includes(q)) ||
+                 (s.trackingCode && s.trackingCode.toLowerCase().includes(q)) ||
+                 (s.shaheenCode && s.shaheenCode.toLowerCase().includes(q)) ||
+                 (s.tripNumber && s.tripNumber.toLowerCase().includes(q));
+        });
+      }
+
+      // Exclude personal use shipments
+      visibleShipments = visibleShipments.filter(s => !s.isPersonalUse && s.status !== 'استخدام شخصي');
+
+      if (visibleShipments.length === 0) { alert('لا توجد شحنات تجارية معروضة لتصفير تكاليفها!'); return; }
+
+      if (!confirm(`هل أنت متأكد من تصفير (إعادة تعيين إلى 0) التكاليف الإضافية لـ ${visibleShipments.length} شحنة تجارية معروضة حالياً؟`)) return;
+
+      const updates = {};
+      visibleShipments.forEach(s => {
+        updates[`${s.id}/additionalCosts`] = 0;
+      });
+
+      try {
+        await update(ref(db, 'users/' + currentUserId + '/shipments'), updates);
+        alert('تم تصفير التكاليف الإضافية بنجاح لجميع المنتجات المعروضة!');
+      } catch (err) {
+        alert('خطأ أثناء التصفير: ' + err.message);
+      }
+    });
+  }
+
   // Render HTML based on Firebase Data
   function renderShipments() {
     shipmentsContainer.innerHTML = '';
