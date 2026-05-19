@@ -696,14 +696,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const applyAutoProfitBtn = document.getElementById('applyAutoProfitBtn');
   if (applyAutoProfitBtn) {
     applyAutoProfitBtn.addEventListener('click', async () => {
-      if (shipments.length === 0) return;
+      // Exclude personal use shipments
+      const targetShipments = shipments.filter(s => !s.isPersonalUse);
+      if (targetShipments.length === 0) {
+        alert("لا توجد شحنات تجارية (غير مخصصة للاستخدام الشخصي) لتحديث أسعار بيعها.");
+        return;
+      }
       const profitPercent = parseFloat(document.getElementById('bulkProfitPercent')?.value) || 50;
-      if (!confirm(`هل أنت متأكد من تحديث أسعار البيع لجميع الشحنات المسجلة حالياً لتكون بتكلفة + ${profitPercent}% ربح؟ سيتم الكتابة فوق الأسعار القديمة.`)) return;
+      if (!confirm(`هل أنت متأكد من تحديث أسعار البيع لـ ${targetShipments.length} شحنة تجارية لتكون بتكلفة + ${profitPercent}% ربح؟ سيتم الكتابة فوق الأسعار القديمة.`)) return;
 
       const updates = {};
       const multiplier = 1 + (profitPercent / 100);
 
-      shipments.forEach(s => {
+      targetShipments.forEach(s => {
         const qty = s.quantity || 1;
         const totalShippingUsd = s.shippingType === 'جوي' 
                                  ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
@@ -742,14 +747,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      if (visibleShipments.length === 0) { alert('لا توجد شحنات معروضة لتوزيع التكاليف عليها!'); return; }
+      // Exclude personal use shipments
+      visibleShipments = visibleShipments.filter(s => !s.isPersonalUse);
+
+      if (visibleShipments.length === 0) { alert('لا توجد شحنات تجارية (غير مخصصة للاستخدام الشخصي) معروضة لتوزيع التكاليف عليها!'); return; }
 
       const totalAmount = parseFloat(document.getElementById('bulkExtraCostsInput')?.value) || 0;
       if (totalAmount <= 0) { alert('يرجى إدخال مبلغ صحيح للتوزيع.'); return; }
 
       const sharePerProduct = totalAmount / visibleShipments.length;
       
-      if (!confirm(`سيتم توزيع مبلغ $${totalAmount} على ${visibleShipments.length} منتج معروض حالياً. نصيب كل منتج (شحنة) هو $${sharePerProduct.toFixed(2)}. هل تريد الاستمرار؟`)) return;
+      if (!confirm(`سيتم توزيع مبلغ $${totalAmount} على ${visibleShipments.length} منتج تجاري معروض حالياً. نصيب كل منتج (شحنة) هو $${sharePerProduct.toFixed(2)}. هل تريد الاستمرار؟`)) return;
 
       const updates = {};
       visibleShipments.forEach(s => {
