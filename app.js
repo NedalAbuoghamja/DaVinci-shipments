@@ -689,6 +689,82 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Bulk Apply Profit to all existing shipments
+  const applyAutoProfitBtn = document.getElementById('applyAutoProfitBtn');
+  if (applyAutoProfitBtn) {
+    applyAutoProfitBtn.addEventListener('click', async () => {
+      if (shipments.length === 0) return;
+      const profitPercent = parseFloat(document.getElementById('bulkProfitPercent')?.value) || 50;
+      if (!confirm(`هل أنت متأكد من تحديث أسعار البيع لجميع الشحنات المسجلة حالياً لتكون بتكلفة + ${profitPercent}% ربح؟ سيتم الكتابة فوق الأسعار القديمة.`)) return;
+
+      const updates = {};
+      const multiplier = 1 + (profitPercent / 100);
+
+      shipments.forEach(s => {
+        const qty = s.quantity || 1;
+        const totalShippingUsd = s.shippingType === 'جوي' 
+                                 ? (parseFloat(s.weightKG) || 0) * (parseFloat(s.kgPrice) || 0)
+                                 : (parseFloat(s.cbmQuantity) || 0) * (parseFloat(s.cbmPrice) || 0);
+        const totalCostUsd = (parseFloat(s.costUSD) || 0) + totalShippingUsd + (parseFloat(s.additionalCosts) || 0);
+        const unitTotalCostUSD = totalCostUsd / qty;
+        const newSellingPriceUSD = (unitTotalCostUSD * multiplier).toFixed(2);
+        
+        updates[`${s.id}/sellingPriceUSD`] = parseFloat(newSellingPriceUSD);
+      });
+
+      try {
+        await update(ref(db, 'users/' + currentUserId + '/shipments'), updates);
+        alert(`تم تحديث جميع أسعار المنتجات المسجلة بنسبة ربح ${profitPercent}% بنجاح!`);
+      } catch (err) {
+        alert('خطأ أثناء التحديث: ' + err.message);
+      }
+    });
+  }
+
+  // Bulk Distribute Extra Costs to displayed shipments
+  const applyBulkExtraCostsBtn = document.getElementById('applyBulkExtraCostsBtn');
+  if (applyBulkExtraCostsBtn) {
+    applyBulkExtraCostsBtn.addEventListener('click', async () => {
+      // Get the currently filtered shipments (what's visible)
+      let visibleShipments = [...shipments];
+      if (statusFilter && statusFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.status === statusFilter.value);
+      if (searchInput && searchInput.value.trim() !== '') {
+        const q = searchInput.value.toLowerCase().trim();
+        visibleShipments = visibleShipments.filter(s => {
+          return (s.itemName && s.itemName.toLowerCase().includes(q)) ||
+                 (s.chinaCode && s.chinaCode.toLowerCase().includes(q)) ||
+                 (s.trackingCode && s.trackingCode.toLowerCase().includes(q)) ||
+                 (s.shaheenCode && s.shaheenCode.toLowerCase().includes(q)) ||
+                 (s.tripNumber && s.tripNumber.toLowerCase().includes(q));
+        });
+      }
+
+      if (visibleShipments.length === 0) { alert('لا توجد شحنات معروضة لتوزيع التكاليف عليها!'); return; }
+
+      const totalAmount = parseFloat(document.getElementById('bulkExtraCostsInput')?.value) || 0;
+      if (totalAmount <= 0) { alert('يرجى إدخال مبلغ صحيح للتوزيع.'); return; }
+
+      const sharePerProduct = totalAmount / visibleShipments.length;
+      
+      if (!confirm(`سيتم توزيع مبلغ $${totalAmount} على ${visibleShipments.length} منتج معروض حالياً. نصيب كل منتج (شحنة) هو $${sharePerProduct.toFixed(2)}. هل تريد الاستمرار؟`)) return;
+
+      const updates = {};
+      visibleShipments.forEach(s => {
+        const currentExtra = parseFloat(s.additionalCosts) || 0;
+        updates[`${s.id}/additionalCosts`] = currentExtra + sharePerProduct;
+      });
+
+      try {
+        await update(ref(db, 'users/' + currentUserId + '/shipments'), updates);
+        alert('تم توزيع التكاليف الإضافية بنجاح على جميع المنتجات المعروضة!');
+        const bulkExtraCostsInput = document.getElementById('bulkExtraCostsInput');
+        if(bulkExtraCostsInput) bulkExtraCostsInput.value = '';
+      } catch (err) {
+        alert('خطأ أثناء التوزيع: ' + err.message);
+      }
+    });
+  }
+
   // Render HTML based on Firebase Data
   function renderShipments() {
     shipmentsContainer.innerHTML = '';
