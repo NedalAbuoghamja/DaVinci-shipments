@@ -698,7 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (applyAutoProfitBtn) {
     applyAutoProfitBtn.addEventListener('click', async () => {
       // Exclude personal use shipments
-      const targetShipments = shipments.filter(s => !s.isPersonalUse);
+      const targetShipments = shipments.filter(s => !s.isPersonalUse && s.status !== 'استخدام شخصي');
       if (targetShipments.length === 0) {
         alert("لا توجد شحنات تجارية (غير مخصصة للاستخدام الشخصي) لتحديث أسعار بيعها.");
         return;
@@ -736,10 +736,18 @@ document.addEventListener('DOMContentLoaded', () => {
     applyBulkExtraCostsBtn.addEventListener('click', async () => {
       // Get the currently filtered shipments (what's visible)
       let visibleShipments = [...shipments];
-      if (statusFilter && statusFilter.value !== 'الكل') visibleShipments = visibleShipments.filter(s => s.status === statusFilter.value);
+      if (statusFilter && statusFilter.value !== 'الكل') {
+        if (statusFilter.value === 'استخدام شخصي') {
+          visibleShipments = visibleShipments.filter(s => s.isPersonalUse || s.status === 'استخدام شخصي');
+        } else {
+          visibleShipments = visibleShipments.filter(s => s.status === statusFilter.value);
+        }
+      }
       if (searchInput && searchInput.value.trim() !== '') {
         const q = searchInput.value.toLowerCase().trim();
         visibleShipments = visibleShipments.filter(s => {
+          // Exclude personal use shipments from search
+          if (s.isPersonalUse || s.status === 'استخدام شخصي') return false;
           return (s.itemName && s.itemName.toLowerCase().includes(q)) ||
                  (s.chinaCode && s.chinaCode.toLowerCase().includes(q)) ||
                  (s.trackingCode && s.trackingCode.toLowerCase().includes(q)) ||
@@ -749,7 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Exclude personal use shipments
-      visibleShipments = visibleShipments.filter(s => !s.isPersonalUse);
+      visibleShipments = visibleShipments.filter(s => !s.isPersonalUse && s.status !== 'استخدام شخصي');
 
       if (visibleShipments.length === 0) { alert('لا توجد شحنات تجارية (غير مخصصة للاستخدام الشخصي) معروضة لتوزيع التكاليف عليها!'); return; }
 
@@ -785,13 +793,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Apply Status Filter
     if (statusFilter && statusFilter.value !== 'الكل') {
-      filteredShipments = filteredShipments.filter(s => s.status === statusFilter.value);
+      if (statusFilter.value === 'استخدام شخصي') {
+        filteredShipments = filteredShipments.filter(s => s.isPersonalUse || s.status === 'استخدام شخصي');
+      } else {
+        filteredShipments = filteredShipments.filter(s => s.status === statusFilter.value);
+      }
     }
     
     // Apply Search
     if (searchInput && searchInput.value.trim() !== '') {
       const q = searchInput.value.toLowerCase().trim();
       filteredShipments = filteredShipments.filter(s => {
+        // Exclude personal use shipments from search results
+        if (s.isPersonalUse || s.status === 'استخدام شخصي') return false;
+        
         return (s.itemName && s.itemName.toLowerCase().includes(q)) ||
                (s.chinaCode && s.chinaCode.toLowerCase().includes(q)) ||
                (s.trackingCode && s.trackingCode.toLowerCase().includes(q)) ||
@@ -843,7 +858,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="status-badge" style="color: ${statusColor}; border-color: ${statusColor}">
             ${shipment.status}
           </div>
-          ${shipment.isPersonalUse ? `
+          ${(shipment.isPersonalUse || shipment.status === 'استخدام شخصي') ? `
           <div class="status-badge" style="color: #60a5fa; border-color: #60a5fa; top: 45px; background: rgba(59, 130, 246, 0.1);">
             <i class="fa-solid fa-user-tag"></i> استخدام شخصي
           </div>
@@ -957,30 +972,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Calculate actual realized sales and profit from sales array (using DB data)
       sales.forEach(sale => {
-        const salePrice = parseFloat(sale.priceUSD) || 0;
-        const saleDiscount = parseFloat(sale.discountUSD) || 0;
-        const revenue = Math.max(0, salePrice - saleDiscount);
-        totalSales += revenue;
-
-        // Find the unit cost of this sold product by matching product code/name against shipments
         const code = (sale.productCode || '').trim().toLowerCase();
-        let unitCost = 0;
+        let match = null;
         if (code) {
-          const match = shipments.find(sh => 
+          match = shipments.find(sh => 
             (sh.chinaCode && sh.chinaCode.trim().toLowerCase() === code) ||
             (sh.trackingCode && sh.trackingCode.trim().toLowerCase() === code) ||
             (sh.shaheenCode && sh.shaheenCode.trim().toLowerCase() === code) ||
             (sh.itemName && sh.itemName.trim().toLowerCase() === code)
           );
-          if (match) {
-            const mQty = parseFloat(match.quantity) || 1;
-            const mGoods = parseFloat(match.costUSD) || 0;
-            const mShip = (match.shippingType === 'جوي' || match.shippingType === 'OU^US')
-                          ? (parseFloat(match.weightKG) || 0) * (parseFloat(match.kgPrice) || 0)
-                          : (parseFloat(match.cbmQuantity) || 0) * (parseFloat(match.cbmPrice) || 0);
-            const mExtra = parseFloat(match.additionalCosts) || 0;
-            unitCost = (mGoods + mShip + mExtra) / mQty;
-          }
+        }
+        
+        // Exclude personal use shipments from net sales/profit calculations
+        if (match && (match.isPersonalUse || match.status === 'استخدام شخصي')) {
+          return;
+        }
+
+        const salePrice = parseFloat(sale.priceUSD) || 0;
+        const saleDiscount = parseFloat(sale.discountUSD) || 0;
+        const revenue = Math.max(0, salePrice - saleDiscount);
+        totalSales += revenue;
+
+        let unitCost = 0;
+        if (match) {
+          const mQty = parseFloat(match.quantity) || 1;
+          const mGoods = parseFloat(match.costUSD) || 0;
+          const mShip = match.shippingType === 'جوي'
+                        ? (parseFloat(match.weightKG) || 0) * (parseFloat(match.kgPrice) || 0)
+                        : (parseFloat(match.cbmQuantity) || 0) * (parseFloat(match.cbmPrice) || 0);
+          const mExtra = parseFloat(match.additionalCosts) || 0;
+          unitCost = (mGoods + mShip + mExtra) / mQty;
         }
         
         const costOfSoldUnits = unitCost * (parseFloat(sale.quantity) || 1);
