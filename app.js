@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
       weightKG: document.getElementById('weightKG').value,
       kgPrice: document.getElementById('kgPrice').value,
       additionalCosts: document.getElementById('additionalCosts').value,
-      sellingPriceUSD: document.getElementById('sellingPriceUSD').value,
+      sellingPriceUSD: ((parseFloat(document.getElementById('sellingPriceUSD').value) || 0) / currentExchangeRate).toFixed(4),
       shippingType: document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري',
       status: document.getElementById('status').value,
       dateChina: document.getElementById('dateChina').value,
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if(d.weightKG) document.getElementById('weightKG').value = d.weightKG;
       if(d.kgPrice) document.getElementById('kgPrice').value = d.kgPrice;
       if(d.additionalCosts) document.getElementById('additionalCosts').value = d.additionalCosts;
-      if(d.sellingPriceUSD) document.getElementById('sellingPriceUSD').value = d.sellingPriceUSD;
+      if(d.sellingPriceUSD) document.getElementById('sellingPriceUSD').value = (parseFloat(d.sellingPriceUSD) * currentExchangeRate).toFixed(2);
       if(d.shippingType) {
         const radio = document.querySelector(`input[name="shippingType"][value="${d.shippingType}"]`);
         if(radio) {
@@ -398,7 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const weightKG = parseFloat(weightKGInput.value) || 0;
     const kgPrice = parseFloat(kgPriceInput.value) || 0;
     const additionalCosts = parseFloat(additionalCostsInput.value) || 0;
-    const sellingPriceUSD = parseFloat(sellingPriceUSDInput.value) || 0;
+    const sellingPriceLYD = parseFloat(sellingPriceUSDInput.value) || 0;
+    const sellingPriceUSD = parseFloat((sellingPriceLYD / currentExchangeRate).toFixed(4));
     const shippingType = document.querySelector('input[name="shippingType"]:checked')?.value || 'بحري';
 
     const imageInput = document.getElementById('itemImage');
@@ -475,7 +476,8 @@ document.addEventListener('DOMContentLoaded', () => {
       setVal('weightKG', shipment.weightKG || '');
       setVal('kgPrice', shipment.kgPrice || '');
       setVal('additionalCosts', shipment.additionalCosts || '');
-      setVal('sellingPriceUSD', shipment.sellingPriceUSD || '');
+      const sellPriceLYD = shipment.sellingPriceUSD ? (parseFloat(shipment.sellingPriceUSD) * currentExchangeRate).toFixed(2) : '';
+      setVal('sellingPriceUSD', sellPriceLYD);
       if(shipment.shippingType) {
         const radio = document.querySelector(`input[name="shippingType"][value="${shipment.shippingType}"]`);
         if(radio) {
@@ -559,12 +561,13 @@ document.addEventListener('DOMContentLoaded', () => {
     costPreviewLYD.textContent = `${lyd} د.ل`;
 
     // Profit Preview
-    const sellPrice = parseFloat(sellingPriceUSDInput.value) || 0;
-    if (sellPrice > 0) {
+    const sellPriceLYD = parseFloat(sellingPriceUSDInput.value) || 0;
+    if (sellPriceLYD > 0) {
+      const sellPriceUSD = sellPriceLYD / currentExchangeRate;
       const unitCostTotalUSD = totalUsd / (parseInt(quantityInput.value) || 1);
-      const profitUSD = sellPrice - unitCostTotalUSD;
+      const profitUSD = sellPriceUSD - unitCostTotalUSD;
       const profitLYD = (profitUSD * currentExchangeRate).toFixed(2);
-      const margin = ((profitUSD / sellPrice) * 100).toFixed(1);
+      const margin = ((profitUSD / sellPriceUSD) * 100).toFixed(1);
       profitPreview.innerHTML = `<i class="fa-solid fa-chart-line"></i> ربح القطعة: $${profitUSD.toFixed(2)} (${profitLYD} د.ل) - نسبة: ${margin}%`;
     } else {
       profitPreview.textContent = '';
