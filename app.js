@@ -834,11 +834,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateFinancialSummary(filteredList) {
     let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0, totalSales = 0, totalProfit = 0;
 
-    if(totalProductsElm) totalProductsElm.textContent = count;
-    if(totalShipmentsCostElm) totalShipmentsCostElm.textContent = `$${totalCost.toFixed(2)}`;
-    if(totalShipmentsCostLYDElm) totalShipmentsCostLYDElm.textContent = `${(totalCost * currentExchangeRate).toFixed(2)} د.ل`;
-    if(totalCbmElm) totalCbmElm.textContent = `${totalCBM.toFixed(2)} CBM`;
-    
     if (typeof populateExpenseShipments === 'function') populateExpenseShipments();
 
     filteredList.forEach(s => {
