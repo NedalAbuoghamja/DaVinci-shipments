@@ -277,9 +277,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const saleAmountLYDInput = document.getElementById('salePriceLYD');
       if(saleAmountUSDInput && saleAmountLYDInput) {
         const usd = parseFloat(saleAmountUSDInput.value);
-        if(!isNaN(usd)) {
-          saleAmountLYDInput.value = (usd * currentExchangeRate).toFixed(2);
-        }
+        if(!isNaN(usd)) saleAmountLYDInput.value = (usd * currentExchangeRate).toFixed(2);
+      }
+      
+      const saleDiscountUSDInput = document.getElementById('saleDiscountUSD');
+      const saleDiscountLYDInput = document.getElementById('saleDiscountLYD');
+      if(saleDiscountUSDInput && saleDiscountLYDInput) {
+        const usdDisc = parseFloat(saleDiscountUSDInput.value);
+        if(!isNaN(usdDisc)) saleDiscountLYDInput.value = (usdDisc * currentExchangeRate).toFixed(2);
       }
     }
   });
@@ -1187,11 +1192,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Sales Logic ---
     const saleForm = document.getElementById('saleForm');
     const saleTitleInput = document.getElementById('saleTitle');
+    const saleProductCodeInput = document.getElementById('saleProductCode');
     const saleCustomerInput = document.getElementById('saleCustomer');
+    const saleCustomerPhoneInput = document.getElementById('saleCustomerPhone');
+    const saleCustomerAddressInput = document.getElementById('saleCustomerAddress');
+    const saleLandmarkInput = document.getElementById('saleLandmark');
     const saleQuantityInput = document.getElementById('saleQuantity');
     const salePriceUSDInput = document.getElementById('salePriceUSD');
     const salePriceLYDInput = document.getElementById('salePriceLYD');
+    const saleDiscountUSDInput = document.getElementById('saleDiscountUSD');
+    const saleDiscountLYDInput = document.getElementById('saleDiscountLYD');
     const saleDateInput = document.getElementById('saleDate');
+    const saleNotesInput = document.getElementById('saleNotes');
+    
     const salesContainer = document.getElementById('salesContainer');
     const totalSalesRealizedUSDElm = document.getElementById('totalSalesRealizedUSD');
     const totalSalesRealizedLYDElm = document.getElementById('totalSalesRealizedLYD');
@@ -1210,6 +1223,19 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    if(saleDiscountUSDInput && saleDiscountLYDInput) {
+      saleDiscountUSDInput.addEventListener('input', () => {
+        const usd = parseFloat(saleDiscountUSDInput.value);
+        if(!isNaN(usd)) saleDiscountLYDInput.value = (usd * currentExchangeRate).toFixed(2);
+        else saleDiscountLYDInput.value = '';
+      });
+      saleDiscountLYDInput.addEventListener('input', () => {
+        const lyd = parseFloat(saleDiscountLYDInput.value);
+        if(!isNaN(lyd)) saleDiscountUSDInput.value = (lyd / currentExchangeRate).toFixed(2);
+        else saleDiscountUSDInput.value = '';
+      });
+    }
+
     if(searchSaleInput) searchSaleInput.addEventListener('input', renderSales);
 
     if (saleForm) {
@@ -1217,10 +1243,16 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const sale = {
           title: saleTitleInput.value,
+          productCode: saleProductCodeInput.value,
           customer: saleCustomerInput.value,
+          phone: saleCustomerPhoneInput.value,
+          address: saleCustomerAddressInput.value,
+          landmark: saleLandmarkInput.value,
           quantity: parseInt(saleQuantityInput.value) || 1,
           priceUSD: parseFloat(salePriceUSDInput.value) || 0,
+          discountUSD: parseFloat(saleDiscountUSDInput.value) || 0,
           date: saleDateInput.value,
+          notes: saleNotesInput.value,
           timestamp: Date.now()
         };
         if (editingSaleId) {
@@ -1252,14 +1284,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if(!s) return;
       editingSaleId = id;
       saleTitleInput.value = s.title || '';
+      saleProductCodeInput.value = s.productCode || '';
       saleCustomerInput.value = s.customer || '';
+      saleCustomerPhoneInput.value = s.phone || '';
+      saleCustomerAddressInput.value = s.address || '';
+      saleLandmarkInput.value = s.landmark || '';
       saleQuantityInput.value = s.quantity || 1;
       salePriceUSDInput.value = s.priceUSD || '';
+      saleDiscountUSDInput.value = s.discountUSD || '';
       saleDateInput.value = s.date || '';
+      saleNotesInput.value = s.notes || '';
       
       const usd = parseFloat(s.priceUSD);
       if(!isNaN(usd) && salePriceLYDInput) salePriceLYDInput.value = (usd * currentExchangeRate).toFixed(2);
       else if (salePriceLYDInput) salePriceLYDInput.value = '';
+
+      const usdDisc = parseFloat(s.discountUSD);
+      if(!isNaN(usdDisc) && saleDiscountLYDInput) saleDiscountLYDInput.value = (usdDisc * currentExchangeRate).toFixed(2);
+      else if (saleDiscountLYDInput) saleDiscountLYDInput.value = '';
 
       cancelSaleEditBtn.style.display = 'inline-block';
       const btn = document.getElementById('saleSubmitBtn');
@@ -1297,8 +1339,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       filtered.sort((a, b) => b.timestamp - a.timestamp).forEach(s => {
         const usd = parseFloat(s.priceUSD) || 0;
-        totalUsd += usd;
+        const usdDisc = parseFloat(s.discountUSD) || 0;
+        const finalUsd = Math.max(0, usd - usdDisc);
+        totalUsd += finalUsd;
+        
         const lyd = (usd * currentExchangeRate).toFixed(2);
+        const lydDisc = (usdDisc * currentExchangeRate).toFixed(2);
+        const finalLyd = (finalUsd * currentExchangeRate).toFixed(2);
 
         const card = document.createElement('div');
         card.className = 'glass-panel fade-in';
@@ -1311,12 +1358,31 @@ document.addEventListener('DOMContentLoaded', () => {
             <button onclick="deleteSale('${s.id}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
           </div>
           <h3 style="margin-bottom: 10px; color: #60a5fa;"><i class="fa-solid fa-box-open"></i> ${s.title}</h3>
-          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-user"></i> الزبون: <strong>${s.customer || 'غير محدد'}</strong></p>
-          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-cubes"></i> الكمية: <strong>${s.quantity}</strong></p>
-          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;"><i class="fa-solid fa-calendar"></i> التاريخ: <strong>${s.date || 'غير محدد'}</strong></p>
-          <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-             <span style="color: var(--text-muted); font-size: 0.9rem;">قيمة البيع:</span>
-             <span style="font-size: 1.3rem; font-weight: 800; color: #60a5fa;">$${usd.toFixed(2)} <span style="font-size: 0.9rem; color: var(--text-muted);">(${lyd} د.ل)</span></span>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-barcode"></i> كود المنتج: <strong style="color: white;">${s.productCode || '---'}</strong></p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-user"></i> الزبون: <strong style="color: white;">${s.customer || 'غير محدد'}</strong></p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-phone"></i> الهاتف: <strong dir="ltr" style="color: white;">${s.phone || '---'}</strong></p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-location-dot"></i> العنوان: <strong style="color: white;">${s.address || '---'}</strong></p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-map-pin"></i> أقرب نقطة دالة: <strong style="color: white;">${s.landmark || '---'}</strong></p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;"><i class="fa-solid fa-cubes"></i> الكمية: <strong style="color: white;">${s.quantity}</strong></p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;"><i class="fa-solid fa-calendar"></i> التاريخ: <strong style="color: white;">${s.date || 'غير محدد'}</strong></p>
+          
+          ${s.notes ? `<div style="margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; font-size: 0.85rem;"><i class="fa-solid fa-note-sticky" style="color: #f59e0b;"></i> <span style="color: white;">${s.notes}</span></div>` : ''}
+          
+          <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 5px;">
+             <div style="display: flex; justify-content: space-between; align-items: center;">
+               <span style="color: var(--text-muted); font-size: 0.9rem;">السعر الأساسي:</span>
+               <span style="font-size: 1rem; color: #60a5fa;">$${usd.toFixed(2)} (${lyd} د.ل)</span>
+             </div>
+             ${usdDisc > 0 ? `
+             <div style="display: flex; justify-content: space-between; align-items: center;">
+               <span style="color: #ef4444; font-size: 0.9rem;">التخفيض الممنوح:</span>
+               <span style="font-size: 1rem; color: #ef4444;">-$${usdDisc.toFixed(2)} (-${lydDisc} د.ل)</span>
+             </div>
+             ` : ''}
+             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px; margin-top: 2px;">
+               <span style="color: white; font-size: 0.95rem;">صافي قيمة البيع:</span>
+               <span style="font-size: 1.3rem; font-weight: 800; color: #10b981;">$${finalUsd.toFixed(2)} <span style="font-size: 0.9rem; color: var(--text-muted);">(${finalLyd} د.ل)</span></span>
+             </div>
           </div>
         `;
         salesContainer.appendChild(card);
