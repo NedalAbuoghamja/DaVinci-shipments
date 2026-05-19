@@ -927,12 +927,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof populateExpenseShipments === 'function') populateExpenseShipments();
 
       filteredList.forEach(s => {
-        if (s.status === 'نفكر نشريه' || s.status === 'U+U?UO U+O\'OUSU') return;
+        if (s.status === 'نفكر نشريه' || s.status === 'استخدام شخصي' || s.isPersonalUse) return;
 
         const qty = parseFloat(s.quantity) || 1;
         totalQuantity += qty;
 
-        const isAir = s.shippingType === 'جوي' || s.shippingType === 'OU^US';
+        const isAir = s.shippingType === 'جوي';
         if (isAir) {
           totalAirQty += qty;
         } else {
