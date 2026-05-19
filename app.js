@@ -39,6 +39,8 @@ let editingSaleId = null;
       const opt = document.createElement('option');
       opt.value = sh.id;
       opt.textContent = `${sh.name} ${sh.code ? `(${sh.code})` : ''} - ${sh.quantity} قطعة`;
+      opt.style.padding = '8px';
+      opt.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
       if(currentSelection.includes(sh.id)) opt.selected = true;
       select.appendChild(opt);
     });
