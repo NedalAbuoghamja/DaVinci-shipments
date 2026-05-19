@@ -85,6 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const totalProfitLYDElm = document.getElementById('totalProfitLYD');
   const actualProfitUSDElm = document.getElementById('actualProfitUSD');
   const actualProfitLYDElm = document.getElementById('actualProfitLYD');
+  const expectedSalesUSDElm = document.getElementById('expectedSalesUSD');
+  const expectedSalesLYDElm = document.getElementById('expectedSalesLYD');
   
   // Search & Filter
   const searchInput = document.getElementById('searchInput');
@@ -939,7 +941,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateFinancialSummary(filteredList) {
     try {
       let totalGoods = 0, totalSeaShipping = 0, totalAirShipping = 0, totalExtra = 0, totalSales = 0, totalProfit = 0,
-          totalQuantity = 0, totalAirQty = 0, totalSeaQty = 0;
+          totalQuantity = 0, totalAirQty = 0, totalSeaQty = 0, expectedSales = 0;
 
       if (typeof populateExpenseShipments === 'function') populateExpenseShipments();
 
@@ -976,6 +978,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sellPrice = parseFloat(s.sellingPriceUSD) || 0;
         if (sellPrice > 0) {
           totalProfit += (sellPrice * qty) - totalCostUsd;
+          expectedSales += (sellPrice * qty);
         }
       });
 
@@ -1024,6 +1027,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if(totalProfitUSDElm) totalProfitUSDElm.textContent = `$${totalProfit.toFixed(2)}`;
       if(totalProfitLYDElm) totalProfitLYDElm.textContent = `${(totalProfit * currentExchangeRate).toFixed(2)} د.ل`;
+
+      if(expectedSalesUSDElm) expectedSalesUSDElm.textContent = `$${expectedSales.toFixed(2)}`;
+      if(expectedSalesLYDElm) expectedSalesLYDElm.textContent = `${(expectedSales * currentExchangeRate).toFixed(2)} د.ل`;
 
       const actualProfitUSD = totalSales - grandTotalUSD;
       const actualProfitLYD = actualProfitUSD * currentExchangeRate;
