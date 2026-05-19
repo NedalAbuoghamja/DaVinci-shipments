@@ -1316,6 +1316,273 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
+    window.printInvoice = function(id) {
+      const s = sales.find(e => e.id === id);
+      if(!s) return;
+
+      const usd = parseFloat(s.priceUSD) || 0;
+      const usdDisc = parseFloat(s.discountUSD) || 0;
+      const finalUsd = Math.max(0, usd - usdDisc);
+      
+      const lyd = (usd * currentExchangeRate).toFixed(2);
+      const lydDisc = (usdDisc * currentExchangeRate).toFixed(2);
+      const finalLyd = (finalUsd * currentExchangeRate).toFixed(2);
+
+      const printWindow = window.open('', '_blank', 'width=600,height=900');
+      
+      const html = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="UTF-8">
+          <title>فاتورة مبيعات - ${s.title}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+          <style>
+            body {
+              font-family: 'Tajawal', sans-serif;
+              margin: 0;
+              padding: 20px;
+              background: white;
+              color: #333;
+            }
+            .invoice-container {
+              max-width: 500px;
+              margin: 0 auto;
+              border: 1px solid #eee;
+              padding: 30px;
+              border-radius: 12px;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            .logo {
+              font-size: 2.5rem;
+              font-weight: 800;
+              color: #000;
+              margin: 0;
+              line-height: 1;
+              font-family: serif;
+              letter-spacing: 2px;
+            }
+            .subtitle {
+              color: #C19A6B;
+              font-size: 1rem;
+              font-weight: 700;
+              margin-top: 5px;
+              letter-spacing: 1px;
+            }
+            .divider {
+              height: 2px;
+              background: #F0E6D2;
+              margin: 15px 0;
+            }
+            .invoice-title {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 2px solid #eee;
+              padding-bottom: 10px;
+              margin-bottom: 10px;
+            }
+            .invoice-title h2 {
+              color: #8B0000;
+              margin: 0;
+              font-size: 1.6rem;
+            }
+            .status-badge {
+              background: #8B0000;
+              color: white;
+              padding: 5px 15px;
+              border-radius: 4px;
+              font-size: 0.9rem;
+              font-weight: bold;
+            }
+            .order-info {
+              text-align: left;
+              font-size: 0.85rem;
+              color: #888;
+              margin-bottom: 20px;
+            }
+            .customer-box {
+              background: #faf8f5;
+              border-radius: 10px;
+              padding: 20px;
+              margin-bottom: 30px;
+            }
+            .customer-box p {
+              margin: 8px 0;
+              font-size: 1.1rem;
+              color: #444;
+            }
+            .customer-box strong {
+              color: #000;
+              display: inline-block;
+              width: 70px;
+            }
+            .items-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+            }
+            .items-table th {
+              text-align: right;
+              color: #C19A6B;
+              border-bottom: 2px solid #8B0000;
+              padding: 10px 5px;
+              font-size: 1.1rem;
+            }
+            .items-table td {
+              padding: 15px 5px;
+              border-bottom: 1px solid #eee;
+              font-weight: bold;
+              font-size: 1.1rem;
+            }
+            .item-meta {
+              display: block;
+              font-size: 0.85rem;
+              color: #888;
+              font-weight: normal;
+              margin-top: 5px;
+            }
+            .totals-section {
+              margin-bottom: 30px;
+            }
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 15px;
+              font-size: 1.1rem;
+              color: #666;
+            }
+            .final-total {
+              background: #8B0000;
+              color: white;
+              border-radius: 12px;
+              padding: 20px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-top: 20px;
+            }
+            .final-total span:first-child {
+              font-size: 1.3rem;
+            }
+            .final-total span:last-child {
+              font-size: 2.2rem;
+              font-weight: 800;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 40px;
+              font-weight: bold;
+            }
+            .footer .thanks {
+              color: #C19A6B;
+              font-size: 1.2rem;
+              margin-bottom: 15px;
+            }
+            .footer p {
+              margin: 8px 0;
+              color: #000;
+            }
+            .footer .branding {
+              color: #ddd;
+              font-size: 0.8rem;
+              margin-top: 30px;
+              font-weight: normal;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            @media print {
+              body { padding: 0; background: white; }
+              .invoice-container { border: none; padding: 0; max-width: 100%; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-container">
+            <div class="header">
+              <h1 class="logo">DaVinci<br><span style="font-size: 1.5rem;">دافينشي</span></h1>
+              <div class="subtitle">Luxury Collection</div>
+              <div class="divider"></div>
+            </div>
+            
+            <div class="invoice-title">
+              <h2>فاتورة مبيعات</h2>
+              <div class="status-badge">CONFIRMED</div>
+            </div>
+            <div class="order-info" dir="ltr">
+              #ORD-${s.timestamp} • ${s.date || new Date(s.timestamp).toLocaleDateString()}
+            </div>
+
+            <div class="customer-box">
+              <p><strong>الزبون:</strong> ${s.customer || 'زائر'}</p>
+              <p><strong>الهاتف:</strong> <span dir="ltr">${s.phone || '---'}</span></p>
+              <p><strong>العنوان:</strong> ${s.address || '---'} ${s.landmark ? `(${s.landmark})` : ''}</p>
+            </div>
+
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>الصنف</th>
+                  <th style="text-align: center;">الكمية</th>
+                  <th style="text-align: left;">السعر</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    ${s.title}
+                    <span class="item-meta">الكود: ${s.productCode || 'عام'}</span>
+                  </td>
+                  <td style="text-align: center;">${s.quantity}</td>
+                  <td style="text-align: left; color: #8B0000;">${lyd} د.ل</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="totals-section">
+              <div class="total-row">
+                <span>إجمالي الأصناف:</span>
+                <span>${lyd} د.ل</span>
+              </div>
+              <div class="total-row" style="color: #10b981;">
+                <span>خصم للزبون:</span>
+                <span dir="ltr">- ${lydDisc} د.ل</span>
+              </div>
+              
+              <div class="final-total">
+                <span>الإجمالي النهائي</span>
+                <span dir="ltr">${finalLyd} د.ل</span>
+              </div>
+            </div>
+
+            <div class="footer">
+              <div class="thanks">شكراً لاختياركم دافينشي - DaVinci</div>
+              <p>طرابلس - ليبيا</p>
+              <div class="branding">DAVINCI POS PREMIUM EDITION</div>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              setTimeout(() => {
+                window.print();
+                window.onafterprint = function() {
+                  window.close();
+                }
+              }, 500);
+            }
+          </script>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+    };
+
     window.renderSales = function() {
       if(!salesContainer) return;
       salesContainer.innerHTML = '';
@@ -1354,6 +1621,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.style.position = 'relative';
         card.innerHTML = `
           <div style="position: absolute; top: 10px; left: 10px; display: flex; gap: 8px;">
+            <button onclick="printInvoice('${s.id}')" style="background: #C19A6B; color: white; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;" title="طباعة الفاتورة"><i class="fa-solid fa-print"></i></button>
             <button onclick="editSale('${s.id}')" style="background: var(--status-ready); color: white; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;"><i class="fa-solid fa-pen"></i></button>
             <button onclick="deleteSale('${s.id}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
           </div>
